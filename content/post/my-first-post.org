@@ -1,0 +1,61 @@
+#+TITLE: My First Post
+#+DATE: 2020-06-17T21:54:28+02:00
+#+DRAFT: true
+#+TAGS[]: first org-mode code
+
+* Testing org-mode rendering
+This is supposed to be the summary of the blog post. Here we give a short tl;dr of what the post is about.
+
+# more
+
+This is the first paragraph of my awesome blog post. Clearly separated by some spacing to indicate the start of a new paragraph.
+
+What if I want to start a new paragraph here? Does that work? Yes it does work /thankfully/ so I can use *org-mode* directly with Hugo. That's awesome!
+Here is a [[https://willschenk.com][link]] in =org-mode=.
+
+PS: [[https://niklasfasching.github.io/go-org][This]] was an amazing resource
+
+* Coding test
+This is clearly a new subsection of the blog post. With it's own separate title and text. Here I'll attempt to
+write some code. This specific example illustrates how one would go about making a linked list in Haskell with
+type information about whether or not the list contains any elements. This way we can create a =safeHead=
+function which gives a type error if one provides an empty =List=.
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE DataKinds, GADTs #-}
+
+-- Promoted data type
+data State = 'Empty | 'NonEmpty
+
+data List State a where
+  Nil :: List 'Empty a
+  Cons :: a -> List s a -> List 'NonEmpty a
+
+safeHead :: List NonEmpty a -> a
+safeHead (Cons x _) = x
+#+END_SRC
+
+* Image link?
+#+CAPTION: captioned link (image in this case)
+[[https://placekitten.com/200/200#.png]]
+
+* Lists
+My list:
+- Apple
+- Orange
+- Pear
+- Mango
+
+
+* Tables
+How about tables then?
+| Name  | Year | Ok? | Status  |
+|-------+------+-----+---------|
+| Alex  | 1954 | No  | Dead    |
+| Hanna | 2000 | Yes | Alive   |
+| Petra | 1988 | Ye  | Unknown |
+
+* Embed tweets using short codes
+
+#+CAPTION: captioned twitter link
+{{< tweet 502826405479317504 >}}
