@@ -1,4 +1,4 @@
-baseURL = "https://vallipuram.dev"
+baseURL = "https://blog.vallipuram.dev"
 title = "Vallipuram blog"
 
 theme = "fuji"
