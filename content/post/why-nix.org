@@ -1,0 +1,136 @@
+#+TITLE: Why Nix?
+#+DATE: 2020-07-07T01:00:00+02:00
+#+DRAFT: false
+#+TAGS[]: nix declerative package-managment functional
+
+I'm often asked questions such as "What's the point of Nix?", "Why would I ever use this?"
+and "Isn't it just yet another package manager?". So in this post I'll try to answer these questions
+and hopefully demystify what Nix is all about.
+
+# more
+
+* The whys and hows
+Nix is a package manager which focuses on reproducibility, declerativeness and reliability. These features
+make it easier to deal and work with packages because they solve a lot of the issues related to package
+management. Now how does Nix achieve this?
+
+Firstly on the point of reproducibility, Nix builds packages in isolation from each other
+and gives each package a unique hash which ensures that they are reproducible, unique and don't have
+undeclared dependencies. _If it works on one machine, it will also work on another_. Moreover by having
+a unique hash for each package we can also have several different versions of the same package installed
+at once since these will all get their own unique path in the Nix store. This is especially important when
+different applications have dependencies on different versions of the same package — it prevents "DLL hell". 
+
+Secondly on the point of declarativeness, Nix packages are declared using the Nix language which
+is heavily inspired by functional programming. In fact package expressions are just functions! This
+declarativeness makes it easier to read and reason about package builds. Furthermore, it becomes trivial to
+share development and build environments.
+
+Lastly on the point of reliability. Nix ensures that installing or
+upgrading a package cannot break other packages. This allows you to easily roll back to previous versions
+and ensures that no package is in an inconsistent state during an upgrade.
+
+
+* Developing with Nix
+Nix also makes it less painful to deal with packages and dependencies in development environments. Whenever
+you want to create a new development environment you can simply use =nix-shell= which creates an interactive
+shell based on a Nix expression. For anyone familiar with =virtualenv= this is similar. For example if I
+want to create a development environment for python I could do something like this.
+=nix-shell -p python38=. If I want to include some python packages I could do this
+=nix-shell -p "python38.withPackages (pkgs: with pkgs; [ pandas requests ])"=. However once you require more
+than a couple of packages and you want to configure other stuff in the shell it gets tiresome to write
+long Nix expressions. Instead what we do is create a =shell.nix= file to put our expression in. 
+
+#+BEGIN_SRC nix
+{ pkgs ? import <nixpkgs> {} }:
+
+pkgs.mkShell {
+  name = "python38-dev-shell";
+  buildInputs =
+    let ps = pkgs.python3Packages; in
+      with pkgs; [
+        python3
+        ps.matplotlib
+        ps.requests
+        ps.virtualenv
+     ];
+}
+#+END_SRC.
+
+Now we can simply run =nix-shell= in the project directory and voile we are dropped into our development
+environment. We can also add this file to our project repository so that any collaborators can get access
+to exactly the same development environment we are using.
+
+* Building packages with Nix
+Nix also makes packaging software less of a hassle. Not only do you get to use the Nix language to package
+software in a declarative manner, but you also get access to all the helper functions that the Nix
+community has built to make it simpler to package software. No longer do you need to know all the details
+about building software for your favourite language. Nix build helpers do all the heavy lifting for you.
+This severely reduces the barrier to entry for contributing packages. In fact Nix was the first ever
+package manager I contributed packages to because of how easy it was and probably one of the reasons
+the Nixpkgs repository has so many packages even though they require contributions to be reviewed
+in a pull request (which is a good thing), unlike software repositories like the AUR where anything goes.
+
+#+CAPTION: Click the image for data source
+#+ATTR_HTML: :style border: 3px solid #8AA2D3;
+#+ATTR_HTML: :style border-radius: 6px;
+#+ATTR_HTML: :style padding: 12px 5px 0px 10px;
+[[https://repology.org/repositories/graphs?autorefresh=1][https://repology.org/graph/map_repo_size_fresh.svg]]
+
+#+BEGIN_SRC nix
+{ lib, python3Packages }:
+
+python3Packages.buildPythonApplication rec {
+  pname = "colorz";
+  version = "1.0.3";
+
+  src = python3Packages.fetchPypi {
+    inherit pname version;
+    sha256 = "0ghd90lgplf051fs5n5bb42zffd3fqpgzkbv6bhjw7r8jqwgcky0";
+  };
+
+  propagatedBuildInputs = with python3Packages; [ pillow scipy ];
+
+  checkPhase = ''
+    $out/bin/colorz --help > /dev/null
+  '';
+
+  meta = with lib; {
+    description = "Color scheme generator";
+    homepage = "https://github.com/metakirby5/colorz";
+    license = licenses.mit;
+    maintainers = with maintainers; [ skykanin ];
+  };
+}
+#+END_SRC.
+Here Nix provides the =buildPythonApplication= builder for packaging python applications which makes it
+very simple for us to build the application. We simply need to provide a =src= for the package and the
+build inputs. Here the =checkPhase= is simply making sure that the CLI runs properly after building.
+
+** Contributing to Nixpkgs
+If one wants to contribute a package like this to the Nixpkgs repository, simply fork the repository on
+GitHub, clone it and add the package. Then we add a call to the function by adding an =callPackage=
+entry under =pkgs/top-level/all-packages.nix= and now we can build the package in the repository
+using =nix-build -A colorz=. Contributing is explained in further detail in the [[https://nixos.org/nixpkgs/manual/#chap-quick-start][Nixpkgs manual]].
+
+Of course one could also build their own software directly in a software repository by adding the build
+expression as a =derivation.nix= file at the root, setting =src= to =./.= and then calling the
+build expression from a =default.nix= file using =callPackage=.
+
+#+BEGIN_SRC nix
+{ pkgs ? import <nixpkgs> {} }:
+
+pkgs.callPackage ./derivation.nix {}
+#+END_SRC.
+
+* Further features
+This has been a surface level showcase of Nix's features, there are plenty more like creating minimal
+docker images using =dockerTools=, declaring and deploying cloud images through =nix-ops= and even an 
+entire GNU/Linux distribution called NixOS which is built around the Nix package manager and brings its
+features to the entire operating system. If this has peaked your interest you can download Nix [[https://nixos.org/download.html][here]] and
+checkout the resource section below.
+
+* Resources
+For newcomers I would highly recommend checking out the [[https://nix.dev/][nix.dev]] guide. Other than that you will probably
+also end up reading the manuals for [[https://nixos.org/nix/manual/][Nix]] and [[https://nixos.org/nixpkgs/manual/][Nixpkgs]] at some point for a more in depth understanding of how
+things work.
