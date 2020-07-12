@@ -59,3 +59,11 @@ How about tables then?
 
 #+CAPTION: captioned twitter link
 {{< tweet 502826405479317504 >}}
+* LaTeX
+{{< katex "["display"]" >}}
+c = \pm\sqrt{a^2 + b^2}
+{{< /katex >}}
+
+{{< katex "["display"]" "[" style "=" "font-size: 3em;" "]" >}}
+\sum_{i=1}^n a_n
+{{< /katex >}}
