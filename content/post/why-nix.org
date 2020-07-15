@@ -1,7 +1,7 @@
 #+TITLE: Why Nix?
 #+DATE: 2020-07-07T01:00:00+02:00
 #+DRAFT: false
-#+TAGS[]: nix declerative package-managment functional
+#+TAGS[]: nix declarative package-managment functional
 
 I'm often asked questions such as "What's the point of Nix?", "Why would I ever use this?"
 and "Isn't it just yet another package manager?". So in this post I'll try to answer these questions
@@ -10,7 +10,7 @@ and hopefully demystify what Nix is all about.
 # more
 
 * The whys and hows
-Nix is a package manager which focuses on reproducibility, declerativeness and reliability. These features
+Nix is a package manager which focuses on reproducibility, declarativeness and reliability. These features
 make it easier to deal and work with packages because they solve a lot of the issues related to package
 management. Now how does Nix achieve this?
 
