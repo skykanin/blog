@@ -1,0 +1,886 @@
+#+TITLE: A taste of dependent types with Idris
+#+DATE: 2020-07-21T04:00:00+02:00
+#+DRAFT: false
+#+TAGS[]: dependent-types Idris
+
+Static type systems are ubiquitous in programming languages. Many of the most popular languages like C and
+Java have static type systems. Static types give the programmer some level of guarantee that their
+program won't contain runtime errors by checking types at compile time. However, the level of safety
+guaranteed by the type system varies widely on the implementation and there are certainly plenty of type
+systems that are more expressive and powerful than the ones found in mainstream languages. Today we will
+be looking at one such group of type systems which support dependent types.
+
+# more
+
+I'll try to demonstrate the expressive power of dependent types and show how they may be used for solving
+programming problems. I'll be demonstrating this with examples in a dependently typed language called [[https://www.idris-lang.org/][Idris]].
+Its syntax is (purposely) similar to Haskell's so if you're already familiar with that then Idris syntax
+won't be hard to read.
+
+* A short aside on syntax
+If you aren't familiar with Haskell's syntax I've included this section explaining the fundamentals of
+Idris syntax, otherwise you can skip this part.
+
+** Simple values
+
+#+BEGIN_SRC idris
+fortyTwo : Nat
+fortyTwo = 42
+
+numberList : List Nat
+numberList = [1, 2, 3]
+
+myBoolean : Bool
+myBoolean = False
+
+theString : Type
+theString = String
+#+END_SRC
+
+Top level values are defined as shown above where everything to the right of =:= indicates the type of the
+value. Notice that the type declaration and value declaration are separate.
+
+** Functions
+
+#+BEGIN_SRC idris
+addOne : Nat -> Nat
+addOne n = n + 1
+
+addOne 10 -- 11
+addOne 0 -- 1
+
+plus : Nat -> Nat -> Nat
+plus a b = a + b
+
+plus 10 7 -- 17
+4 `plus` 8 -- 12
+
+multiply : Nat -> Nat -> Nat
+multiply = \a b => a * b
+
+multiply 4 3 -- 12
+10 `multiply` 3 -- 30
+
+#+END_SRC
+
+Functions are defined similarly using the =->= type constructor. For the value declaration you can put
+the input arguments on the left-hand side of the === sign. Alternatively you can define it as an anonymous
+function (aka. a lambda function) as done for =multiply= here. The alternative definition
+=multiply a b = a * b= would be equivalent. Furthermore, when passing arguments to functions the arguments
+are space separated, one can also make any function infix by using =`= on both sides of the function name
+as shown.
+
+** Defining data structures
+
+#+BEGIN_SRC idris
+data Fruit = Apple | Orange | Pear | Banana
+
+orange : Fruit
+orange = Orange
+
+data Pair a b = MkPair a b
+
+myTuple : Pair Nat String
+myTuple = MkPair 10 "test"
+
+otherTuple : Pair Bool Fruit
+otherTuple = MkPair False Pear
+
+data Maybe a = Nothing | Just a
+
+perhapsCarModel : Maybe String
+perhapsCarModel = Just "Fiat"
+
+largestNumber : Maybe Nat
+largestNumber = Nothing
+#+END_SRC
+
+We define  data structures using the =data= keyword. On the LHS of the === we define the type
+constructor and any type parameters.[fn:3] On the RHS we define all our data constructors which are
+the constructors we can use to build some value of the given type.[fn:4] Multiple data constructors are delimited
+by the =|= symbol. All type and data constructors have to be written in  pascal case. This type of data
+definition is knows as an algebraic data type or ADT.
+
+#+BEGIN_SRC idris
+-- equivalent GADT definition for the Maybe type
+data Maybe : Type -> Type where
+  Nothing : Maybe a
+  Just : a -> Maybe a
+#+END_SRC
+
+However, Idris also provides a more generalised way of defining data types knows as a generalised algebraic
+data type or GADT. Here we specify the arguments to the type constructor first. Looking at the =Maybe=
+type it takes one type parameter, the =a= from the ADT definition, and then returns a type like =Maybe Nat=
+or =Maybe String= for example. Therefore, it has the type =Type -> Type=. Then we define the data
+constructors by providing their type. Since =Nothing= doesn't have any parameters it's of the type
+=Maybe a= where =a= is a type variable. =Just= however does have an argument so its type is
+=a -> Maybe a=. Basically a function which takes an argument of type =a= and returns a =Maybe a=.
+
+It may seem like the GADT definition is just a more verbose version of the ADT, but GADTs allow you to
+define types which aren't possible to define using regular ADTs since you can specialise type parameters
+in a data constructor.
+
+** Pattern matching
+#+BEGIN_SRC idris
+data Maybe : Type -> Type where
+  Nothing : Maybe a
+  Just : a -> Maybe a
+
+maybe : (a -> b) -> b -> Maybe a -> b
+maybe fun fallback val =
+  case val of
+    Nothing => fallback
+    Just x => fun x
+
+data List : Type -> Type where
+  Nil : List a
+  (::) : a -> List a -> List a
+
+map : (a -> b) -> List a -> List b
+map fun list = case list of
+    Nil => Nil
+    (x::xs) => f x :: map fun xs
+
+-- equivalent definition of map with syntax sugar
+map : (a -> b) -> List a -> List b
+map _ [] = []
+map f (x::xs) = f x :: map f xs
+#+END_SRC
+Now that we know how to define data types we can finally look at pattern matching. Pattern matching lets us
+match on data constructors in our functions using the =case ... of ...= syntax. You can think of pattern
+matching as a fancy =switch= statement. In the =maybe= function defined above we
+return the =fallback= value if =val= is empty. If it's not empty we apply the function =fun= to the value
+inside =val=. Note that in the second example we're using the syntax sugar for pattern matching on cases
+by defining the function on a separate line for each case. Furthermore, =[]= is syntactic sugar for =Nil=
+and the underscore =_= is used when some input value isn't used on the RHS of an expression.
+
+* Type drive development in Idris
+One of the core features of Idris is what we call type driven development. By leveraging its type system
+we can get a lot of help from the compiler when implementing functions. Writing a program in Idris can be
+seen as a conversation between the programmer and the compiler. We start by giving a type definition for
+some function, then we define the function and then refine the function until we have an implementation that
+type checks. Hopefully in the end we have a program that works. This process is much helped by dependent
+types since we can be very precise about our functions type and express dependent properties otherwise not
+possible in most languages.
+
+#+BEGIN_SRC idris
+filter : (a -> Bool) -> List a -> List a
+filter p l = ?filter_rhs
+
+-- REPL output
+Main> :t filter_rhs
+ 0 a : Type
+   l : List a
+   p : a -> Bool
+-------------------------------------
+hole : List a
+#+END_SRC
+
+Let's say we want to implement the =filter= function. We start
+by giving its type and a function definition which introduces the function arguments on the LHS. On the
+right we put a typed hole called =filter_rhs=. When we load the code into the Idris REPL and check
+the type of the hole we get the output above listing everything we have access to in scope.[fn:6] We see that
+we have access to the predicate =p= and the list =l=.[fn:1] [fn:2]
+
+#+BEGIN_SRC idris
+filter : (a -> Bool) -> List a -> List a
+filter p [] = ?filter_rhs_1
+filter p (first :: rest) = ?filter_rhs_2
+
+-- REPL output
+Main> :t filter_rhs_1
+ 0 a : Type
+   p : a -> Bool
+-------------------------------------
+hole : List a
+
+Main> :t filter_rhs_2
+ 0 a : Type
+   p : a -> Bool
+   first : a
+   rest : List a
+--------------------------------------
+filter_rhs_2 : List a
+#+END_SRC
+
+Using an interactive editor we can now case split on =l= to pattern match on all the data
+constructors of the =List= type. Now we have two holes, one for each list constructor. For the empty
+case we don't have much to work with. We have the predicate =p=, but no elements of type =a= to apply
+it to. Here we can actually ask the compiler to search for a solution for us. In this case there is only
+one valid solution which is to return the empty list. For the cons constructor =::= we have more to work
+with. We have a value =first= of type =a= which we can pass as an argument to =p= so that we get back a
+=Bool=. Since we want to filter out elements which don't match the predicate we have to return different
+things depending on the result of =p first=, therefore we can use an =if= expression.
+
+#+BEGIN_SRC idris
+filter : (a -> Bool) -> List a -> List a
+filter p [] = []
+filter p (first :: rest) = if p first then first :: filter p rest else filter p rest
+#+END_SRC
+
+For the case where we want to keep =first= as part of the list we put it at the front of the list and make
+a recursive call to =filter= with the remaining part of the list to be filtered, =rest=. If the predicate
+doesn't hold then we must discard =first= and so we just make a recursive call to =filter= with the =rest=,
+ignoring =first=.
+
+Using this pattern of type, define, refine is very beneficial when developing in Idris. By leaning on
+Idris' type system it can guide you towards the correct implementation and the more information about
+your functions you can encode in your types the higher the chances are that you end up with the correct
+implementation. However, Idris' case split and search isn't fool proof and doesn't absolve you as a
+developer from thinking about the implementation, but the compiler can certainly help you along the way.
+
+* What are dependent types?
+A dependent type is a type whose definition depends on a value. A language which supports dependent types
+supports first class types. In such languages types are just regular values like any other value. There
+is no distinction between the type level and the term level. In practice this means that you can assign
+names to types, functions can take types as arguments and return types. In other words you can compute
+types.
+
+#+BEGIN_SRC idris
+stringOrNat : (isStr : Bool) -> Type
+stringOrNat True = String
+stringOrNat False = Nat
+#+END_SRC
+
+Here we have an example of a function which returns a type depending on the input boolean which we have
+named =isStr= in the type although it's not strictly necessary to give it a name in this case. What's the
+point of defining functions which computer types if not to use it as part of some other type.
+
+#+BEGIN_SRC idris
+lengthOrDouble : (isStr : Bool) -> stringOrNat isStr -> Nat
+lengthOrDouble True str = length str
+lengthOrDouble False num = num + num
+#+END_SRC
+
+Here we introduce our first dependent function. =lengthOrDouble='s first argument is a value =isStr= of
+type =Bool=, however the second arguments type is dependent on the value of =isStr= since we are using
+the previously defined =stringOrNat= to compute the type. If =isStr= is =True= then the second argument
+is a =String= and so =str= is a value of type =String= and we can return the length. Otherwise, it's a
+=Nat= and we return the double of that value =num=. We can now test this in the REPL by passing
+a =Bool= to =lengthOrDouble=.
+
+#+BEGIN_SRC idris
+-- REPL output
+Main> :t lengthOrDouble True
+lengthOrDouble True : String -> Nat
+
+Main> :t lengthOrDouble False
+lengthOrDouble False : Nat -> Nat
+
+Main> lengthOrDouble True "hello"
+5 : Nat
+
+Main> lengthOrDouble False 20
+40 : Nat
+#+END_SRC
+
+Notice how the type changes depending on the value of the =Bool= passed to =lengthOrDouble=.
+
+However, this example is quite contrived so what sort of useful things can we do with dependent functions?
+If you've ever programmed in C you will be familiar with the function =printf= which formats a string. This
+is in fact a dependent function! =printf= takes an argument string with placeholders for strings and numbers
+such as '%s' and '%d' then takes those string and numbers as arguments and returns a string where the
+placeholders are replaced with the values. So the type of the function depends on what sort of string
+it is given. In most languages =printf= is implemented in an unsafe manner. If you supply values that don't
+match the placeholders in the string your program will crash with a runtime error, but in Idris we can
+implement a type safe version of =printf=. 
+
+#+BEGIN_SRC idris
+-- REPL output
+Main> :t printf "Hello my name is %s and I'm %d years old"
+printf "Hello my name is %s and I'm %d years old" : String -> Nat -> String
+
+Main> :t printf "Hello my name is %s and my friend here is %s"
+printf "Hello my name is %s and my friend is here is %s" : String -> String -> String
+
+Main> printf "Hello my name is %s and I'm %d years old" "Bob" 17
+"Hello my name is Bob and I'm 17 years old" "Bob" : String
+
+Main> printf "Hello my name is %s and I'm %d years old" "Bob" "woops"
+builtin : Type mismatch between
+          String (Type of "woops")
+and
+          Nat (Expected type)
+#+END_SRC
+
+The implementation is slightly more involved than the previous example, but
+the principle is exactly the same. If you want to take a look at the source code you can find it [[https://gist.github.com/chrisdone/672efcd784528b7d0b7e17ad9c115292][here]].
+
+* Dependent data types
+Lets take a look at implementing =append= for the =List= type.
+
+#+BEGIN_SRC idris
+append : List a -> List a -> List a
+append xs ys = ?append_rhs
+#+END_SRC
+
+We start by case splitting on the first argument =xs=.
+
+#+BEGIN_SRC idris
+append : List a -> List a -> List a
+append [] ys = ?append_rhs_1
+append (first :: rest) ys = ?append_rhs_2
+#+END_SRC
+
+For the first case where =xs= is empty there really isn't much we can do other
+than return the second list =ys= and indeed the compiler could figure this out
+for you when searching for a solution. However, the second case is slightly
+more interesting.
+
+Here we have to think a bit about what we want because there
+are several solutions which would type check. What we want is to traverse
+over the entire list =xs= and then add the list =ys= to the end. Unfortunately
+if we had left it to the compiler to search for a solution it would
+have returned =ys=, which would type check because =ys= is of type =List a=
+as well, but isn't the behaviour we're looking for.
+
+#+BEGIN_SRC idris
+append : List a -> List a -> List a
+append [] ys = []
+append (first :: rest) ys = ys -- woops, wrong implementation
+#+END_SRC
+
+Luckily for us there is a solution to this problem. If we can give the
+compiler more information about the =List= type we're working on perhaps
+it could infer the correct solution.
+
+#+BEGIN_SRC idris
+data Nat : Type where
+  Z : Nat        -- zero
+  S : Nat -> Nat -- successor of a natural number
+
+data Vect : Nat -> Type -> Type where
+  Nil : Vect Z a                       -- the empty vector
+  (::) : a -> Vect k a -> Vect (S k) a -- adding an element to the front of a vector
+#+END_SRC
+
+Here we introduce the =Vect= type which is just like the =List= type, but
+also parameterised over the length of the list. We're using the =Nat= type
+for natural numbers here to represent the length which itself has a recursive
+definition as shown above. However, Idris includes syntax sugar for this type
+as well, so we can write =3= instead of =S (S (S Z))= for example. In this
+case =Nil=, representing the empty vector, takes no arguments and gives us a
+list of type =Vect Z a= which is a list of length zero.
+
+For the cons
+constructor =::= we take some element of type =a= and vector of type
+=Vect k a= where =k= is the length and return a vector of type =Vect (S k) a=
+. Since we're adding one element to the front of the vector it will have the
+length =S k= otherwise known as =k + 1=.
+
+#+BEGIN_SRC idris
+append : Vect n a -> Vect m a -> Vect (n + m) a
+append xs ys = ?append_rhs
+#+END_SRC
+
+Since we are now defining append on =Vect= we can encode an invariant in the
+type signature. The resulting vector we get from appending two vectors of
+length =n= and =m= is always going to be of length =n + m=.
+
+#+BEGIN_SRC idris
+append : Vect n a -> Vect m a -> Vect (n + m) a
+append [] ys = ?append_rhs_1
+append (first :: rest) ys = ?append_rhs_2
+#+END_SRC
+
+Again we start by case splitting on the first list =xs=.
+
+#+BEGIN_SRC idris
+-- REPL output
+Main> :t append_rhs_1
+ 0 m : Nat
+ 0 a : Type
+   ys : Vect m a
+ 0 n : Nat
+-------------------------------------
+append_rhs_1 : Vect m a
+#+END_SRC
+
+Inspecting the first typed hole we find that =append_rhs_1= has the type
+=Vect m a= which happens to be the type of =ys= here. Since this is the only
+value which matches the type we must return it (again the compiler could infer
+this for us), but the original return type we declared for =append= had the length =n + m=
+how come it has changed? Since we pattern matched on the first list =xs= with
+the empty case =Nil= / =[]= here the compiler has inferred the type of =n= to be =Z= / =0=
+which is the type of the =Nil= constructor as we defined it in our =Vect=
+type. Therefore, the return type of =append_rhs_1= has changed to =Vect (0 + m) a=
+in this case and the compiler has simplified this to the normal form
+=Vect m a=. By pattern matching on the first list =xs= we've learned more about the
+type which lets the compiler make more inferences.
+
+#+BEGIN_SRC idris
+-- REPL output
+Main> :t append_rhs_2
+ 0 m : Nat
+ 0 a : Type
+   first : a
+   rest : Vect len a
+   ys : Vect m a
+ 0 n : Nat
+-------------------------------------
+append_rhs_2 : Vect (S (len + m)) a
+#+END_SRC
+
+In the second case where =xs= contains elements the typed hole is of a
+different type. Here we have to return a =Vect= of length =S (len + m)= where
+=len= is the length of =rest= and =m= is the length of =ys=. We can do this by using =::= to
+construct a vector where =first= is the head and the tail is the result of calling =append= on 
+=rest= and =ys=. Let's check that the lengths match.
+#+BEGIN_SRC idris
+||| Taken from append_rhs_2:
+||| first : a
+||| rest : Vect len a
+||| ys : Vect m a
+
+first :: ... -- Vect (S ?something) a
+
+append rest ys -- Vect (len + m) a
+
+first :: append rest ys -- Vect (S (len + m)) a
+
+-- Vect
+append rest ys
+#+END_SRC
+
+- Adding =first= to the front of some list will give use a vector of length =S ?something= where
+  =?something= is the length of the vector that =first= is being added to as given by the =::= definition 
+  in the =Vect= type we defined.
+
+- The length of =append rest ys= is =len + m= as given by our definition of =append=.
+
+Therefore, it follows that the length of =first :: append rest ys= will be =S (len + m)= which is exactly
+what we were looking for!
+
+There is really only one way of implementing this function therefore we can let the compiler search for a
+solution and it will give us the correct answer.
+
+#+BEGIN_SRC idris
+append : Vect n a -> Vect m a -> Vect (n + m) a
+append [] ys = ys
+append (first :: rest) ys = first :: append rest ys
+#+END_SRC
+
+As we've seen providing more information about the type in the data structure can be useful and there
+are several reasons for that.
+- it gives us more information about the type which we can exploit depending on the context
+- it lets us encode invariants in functions that manipulate dependent data structures
+  - these invariants make our code more type safe by reducing the total amount of valid implementations
+    meaning implementations that pass the type checker
+
+However, this doesn't mean you always want to add all the extra type information you possibly can to any
+given data structure. Once you become more expressive about your types and the type grows more complex
+you may find it harder to implement functions which manipulating said data structure. The more types you
+carry around and invariants in your functions or data structures the more things the compiler needs to
+be able to prove about your functions so that the program type checks and for more complex propositions
+this requires you to provide proofs in your functions so that the compiler may resolve the types.
+
+* Propositions as types
+
+Dependent types allow us to express propositions as types. This is useful because if we can show that these
+propositions hold true then we have proven the validity of said proposition in the mathematical sense. The
+direct relationship between formal proofs and computer programs is knows as the [[https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence][Curry-Howard equivalence]].
+Historically it has also been the main use of dependent types in theorem provers such as [[https://coq.inria.fr/][Coq]] and [[https://wiki.portal.chalmers.se/agda/pmwiki.php][Agda]].
+
+So how do we write proofs in Idris? We start by describing propositional equality between types as
+its own type. Let's start by defining one such data type for propositional equality between natural numbers.
+
+#+BEGIN_SRC idris
+data EqNat : Nat -> Nat -> Type where
+  SameNat : (num : Nat) -> EqNat num num
+#+END_SRC
+
+Here we define a data type =EqNat= which takes two =Nat='s and gives us back a =Type=. It has one
+constructor =SameNat= which takes only one argument the value we call =num= of type =Nat= and returns
+a type of =EqNat num num=. Thereby enforcing that the two =Nat= values in the type are indeed the same
+number. Now we can start off with a simple proof of equality.
+
+#+BEGIN_SRC idris
+smallProofEq : EqNat (2 + 2) 4
+smallProofEq = ?foo
+#+END_SRC
+
+Let's try to prove that =2 + 2 = 4=, we start by checking the typed hole.
+#+BEGIN_SRC idris
+Main> :t foo
+-------------------------------------
+foo : EqNat 4 4
+#+END_SRC
+
+Here we see that the compiler has already simplified =2 + 2= for us. So the return type has now changed
+to =EqNat 4 4=. So how do we provide a value of type =EqNat 4 4=? Well =EqNat= only has one constructor
+so lets start with that.
+
+#+BEGIN_SRC idris
+smallProofEq : EqNat (2 + 2) 4
+smallProofEq = SameNat ?foo
+
+-- REPL output
+Main> :t foo
+-------------------------------------
+foo : Nat
+#+END_SRC
+
+We now see that =?foo= has the type =Nat= so we can now pass =4= to the =SameNat= constructor.
+
+#+BEGIN_SRC idris
+smallProofEq : EqNat (2 + 2) 4
+smallProofEq = SameNat 4
+#+END_SRC
+
+Now we have a proof that =2 + 2 = 4=, but what happens if we try to prove something that isn't true?
+
+#+BEGIN_SRC idris
+smallProofNotEq : EqNat (2 + 2) 5
+smallProofNotEq = SameNat 4
+#+END_SRC
+
+#+BEGIN_SRC
+When checking right-hand side of smallProofNotEq with expected type
+        EqNat (2 + 2) 5
+     
+Type mismatch between
+        EqNat num num (Type of SameNat num)
+and
+        EqNat 4 5 (Expected type)
+
+Specifically:
+        Type mismatch between
+                0
+        and
+                1
+#+END_SRC
+Here we get a type error complaining that the compiler can't unify =0= with =1=. Remember that the
+definition of =Nat= is recursive so the compiler has tried to reduce both numbers down to zero, but fails
+because =5= is greater than =4=, therefore we get the type error that =1= is not equal to =0=.
+
+** A note on totality
+One important thing to make sure of when writing these kinds of proofs is that the functions are total
+meaning that they are defined for any valid input and that the function terminates. If we don't enforce
+totality we can end up proving anything. Take for example the previous invalid proof.
+#+BEGIN_SRC idris
+smallProofNotEq : EqNat (2 + 2) 5
+smallProofNotEq = smallProofNotEq
+#+END_SRC
+If we didn't enfore totality defining =smallProofNotEq= as itself would be a perfectly valid proof of
+how =4 = 5= to the compiler and we don't want that. However, we do want to enforce totality for proofs
+so if you were to write this in Idris the compiler would complain with the following message:
+#+BEGIN_SRC
+smallProofNotEq is possibly not total due to recursive path smallProofNotEq
+#+END_SRC
+
+On the other hand, it is sometimes useful to write partial (non-total) functions and therefore
+possible to circumvent this check in Idris by declaring a function =partial=, but we want our proofs
+to be total.
+
+Let's try proving another property about natural numbers.
+
+#+BEGIN_SRC idris
+successorEq : EqNat x y -> EqNat (S x) (S y)
+successorEq p = ?successorEq_rhs
+#+END_SRC
+
+Here we want to prove that given some existing proof that =x= is equal to =y= it implies that the
+successor of =x= equals the successor of =y=. In other words we want to prove that if =1 = 1= then
+=2 = 2=, but for all natural numbers.
+
+#+BEGIN_SRC idris
+successorEq : EqNat x y -> EqNat (S x) (S y)
+successorEq (SameNat n) = ?successorEq_rhs
+
+-- REPL output
+Main> :t successorEq_rhs
+  n : Nat
+------------------------------------------
+successorEq_rhs : EqNat (S n) (S n)
+#+END_SRC
+
+We start by pattern matching on the argument =p='s only constructor and checking the typed hole.
+Since we have pattern matched on the constructor =SameNat= which requires in this case =x= to be =y=
+because it's the only way to construct a proof of that type we now see that the return type has changed
+from =EqNat (S x) (S y)= to =EqNat (S n) (S n)=. This is now trivial to prove.
+
+#+BEGIN_SRC idris
+successorEq : EqNat x y -> EqNat (S x) (S y)
+successorEq (SameNat n) = SameNat (S n)
+
+-- Repl output
+Main> :total successorEq
+successorEq is Total
+
+Main> successorEq (SameNat 10)
+SameNat 11 : EqNat 11 11
+
+Main> successorEq (SameNat 4)
+SameNat 5 : EqNat 5 5
+#+END_SRC
+
+We have proved succession equality for natural numbers and checked that it is indeed total! Now we can
+call it with some proof of equality on natural numbers and it will give us back a proof of equality on the
+successor of that number.
+
+** Polymorphic propositional equality
+
+This is all great, but it would be quite annoying if we had to define a type like =EqNat= to represent
+propositional equality for every single type. Furthermore, having to explicitly pass arguments to
+the data constructor =SameNat= is tedious. Therefore, the standard library provides a polymorphic
+version of the equality type for us.
+
+#+BEGIN_SRC idris
+data (=) : a -> b -> Type where
+  Refl : x = x
+#+END_SRC
+
+Here =a= and =b= can be of any type not just =Nat=. Notice that the data constructor =Refl= doesn't
+take any arguments like we did with =SameNat= because its argument =x= is implicitly bound.
+
+#+BEGIN_SRC idris
+smallProof : 2 + 2 = 4
+smallProof = Refl
+
+successor : (x = y) -> S x = S y
+successor Refl = Refl
+
+-- REPL output
+Main> the (1 = 1) Refl
+Refl : 1 = 1
+
+Main> the (7 = 7) Refl
+Refl : 7 = 7
+
+Main> successor (the (1 = 1) Refl)
+Refl : 2 = 2
+
+Main> successor (the (7 = 7) Refl)
+Refl : 8 = 8
+#+END_SRC
+
+Here are the examples from earlier rewritten to use the generic equality type. Since =Refl='s argument
+is implicitly bound, the compiler can't always infer its type without a type signature. That's why we
+use the =the= function to give it a type explicitly. =the= is just a regular function with the dependent
+type signature =the : (a : Type) -> a -> a=. It takes a =Type= which we name =a= as its first argument
+and then a /value/ of type =a= and then returns that same value of type =a=.
+
+** Equality in action
+
+Now that we've looked at how the equality type works and seen some trivial proofs lets look at equality
+in action. Lets say we want to write a function which zips together two vectors of the =Vect= type we
+previously defined.[fn:5]
+
+#+BEGIN_SRC idris
+tryZip : Vect n a -> Vect m b -> Maybe (Vect n (a, b))
+#+END_SRC
+
+We can't always be sure that any callers of this function will call it with vectors of the same length.
+Hence, why =tryZip= takes two vectors of potentially different lengths =n= and =m=.
+Therefore, we might not be able to produce a result and so to reflect this we use the =Maybe= type.
+
+#+BEGIN_SRC idris
+tryZip : Vect n a -> Vect m b -> Maybe (Vect n (a, b))
+tryZip xs ys = if length xs == length ys then Just ?help else Nothing
+#+END_SRC
+
+One could be tempted to start writing the function as shown above, but if we inspect the typed hole =help=
+we see that we've run into a problem. 
+
+#+BEGIN_SRC idris
+Main> :t help
+ 0 b : Type
+ 0 m : Nat
+ 0 a : Type
+ 0 n : Nat
+   ys : Vect m a
+   xs : Vect n a
+-------------------------------------
+help : Vect n (a, b)
+#+END_SRC
+
+Even though we've check that the length of each vector is equal the compiler still reports that =xs= has
+length =n= and =ys= has length =m=. Why is this? Well, the ==== function simply checks for boolean equality
+and doesn't inform the compiler of types.[fn:7] What we need here is a proof! What we want is a function that
+given two =Nat='s gives us back a proof that they are equal if the arguments are indeed equal.
+
+#+BEGIN_SRC idris
+checkEqNat : (n, m : Nat) -> Maybe (n = m)
+checkEqNat Z Z = Just Refl
+checkEqNat (S k) Z = Nothing
+checkEqNat Z (S j) = Nothing
+checkEqNat (S k) (S j) =
+  case checkEqNat k j of
+    Nothing => Nothing
+    (Just Refl) => Just Refl
+#+END_SRC
+
+Note that =(n, m : Nat)= is just shorthand for =(n : Nat) -> (m : Nat)=. We are still passing two
+seperate arguments =n= and =m= to this function.
+By using the type, define, refine technique we learned earlier we will eventually get something like
+this =checkEqNat= function. The last case however is a bit tricky.
+
+What we want to return here is a proof that the successor of =k=
+equals the successor of =j=. They are only equal if =k = j=, so we call =checkEqNat k j= recursively and
+pattern match on the result. If the result is =Nothing= then =k= is not equal to =j= and we return
+=Nothing=. Otherwise, we have =Just x= where =x= is a proof that =k = j= so we pattern match on the only
+constructor one can use to construct a proof which is =Refl=. Therefore, the return type changes to
+=Maybe (S k = S k)= and we can return =Just Refl=. It might be clearer to see what's going on here if we
+show the implicit arguments to =Refl= on both sides of the pattern match. Idris allows us to explicitly
+pass implicit arguments using the curly brace syntax.
+
+#+BEGIN_SRC idris
+checkEqNat (S k) (S j) =
+  case checkEqNat k j of
+    Nothing => Nothing
+    (Just (Refl {x = k}) => Just (Refl {x = S k})
+#+END_SRC
+
+We are using the proof we get from the pattern match =Refl : k = j= to return a proof that =S k = S j=.
+This is also known as proof by induction. Now that we have defined =checkEqNat= we can continue with our
+=tryZip= implementation.
+
+#+BEGIN_SRC idris
+tryZip : Vect n a -> Vect m b -> Maybe (Vect n (a, b))
+tryZip xs ys = ?tryZip_rhs
+#+END_SRC
+
+What we want to do here is pattern match on the result of =checkEqNat n m= where =n= and =m= are the
+lengths of the two vectors, but even though =n= and =m= are in fact arguments to the function =tryZip= they
+are implicitly bound and so will be erased unless we specify otherwise. If we inspect the typed hole
+=tryZip_rhs= we see the following:
+
+#+BEGIN_SRC idris
+Main> :t tryZip_rhs
+ 0 b : Type
+ 0 m : Nat
+ 0 a : Type
+ 0 n : Nat
+   ys : Vect m a
+   xs : Vect n a
+-------------------------------------
+tryZip_rhs : Maybe (Vect n (a, b))
+#+END_SRC
+=n= and =m= here have a =0= in front of them, meaning that we can't really depend on them at runtime.
+To fix this we must explicitly state that we want to use them. This can be done by using the
+curly braces syntax we saw earlier, but now in the type of =tryZip= as well.
+
+#+BEGIN_SRC idris
+tryZip : {n, m : Nat} -> Vect n a -> Vect m b -> Maybe (Vect n (a, b))
+tryZip {n} {m} xs ys = ?tryZip_rhs
+#+END_SRC
+
+These =Nat='s are still implicitly bound, so we don't have to explicitly pass them as arguments when calling
+=tryZip=, but we now have access to them at runtime. Let's look at the typed hole again.
+
+#+BEGIN_SRC idris
+Main> :t tryZip_rhs
+ 0 b : Type
+ 0 a : Type
+   n : Nat
+   m : Nat
+   ys : Vect m a
+   xs : Vect n a
+-------------------------------------
+tryZip_rhs : Maybe (Vect n (a, b))
+#+END_SRC
+
+We can see that =tryZip_rhs= has changed a bit. There is no longer a =0= in front of =n= and =m= and so we
+now have access to them at runtime.
+
+#+BEGIN_SRC idris
+tryZip : {n, m : Nat} -> Vect n a -> Vect m b -> Maybe (Vect n (a, b))
+tryZip {n} {m} xs ys =
+  case checkEqNat n m of
+    Nothing => Nothing
+    (Just Refl) => ?hole
+#+END_SRC
+
+Continuing with our implementation we pattern match on =checkEqNat n m=. If it returns =Nothing= then the
+two lengths aren't equal so can't zip together the vectors. Therefore we return =Nothing=. In the case
+where the lengths are equal we pattern match on the proof =Refl : n = m= and so the typed holed =hole= shows
+us the following:
+
+#+BEGIN_SRC idris
+Main> :t hole
+ 0 b : Type
+ 0 a : Type
+   n : Nat
+   ys : Vect n b
+   xs : Vect n a
+   m : Nat
+-------------------------------------
+hole : Maybe (Vect n (a, b))
+#+END_SRC
+
+We now see that the vectors =xs= and =ys= have the same length =n=. Therefore, we can now safely call
+the =zip= function on them.
+
+#+BEGIN_SRC idris
+tryZip : {n, m : Nat} -> Vect n a -> Vect m b -> Maybe (Vect n (a, b))
+tryZip {n} {m} xs ys =
+  case checkEqNat n m of
+    Nothing => Nothing
+    (Just Refl) => Just (zip xs ys)
+#+END_SRC
+
+With this implementation of =tryZip= we can try calling the function with some values and hopefully see
+the result we expect.
+
+#+BEGIN_SRC idris
+Main> tryZip [1, 2, 3] [4, 5, 6]
+Just [(1, 4), (2, 5), (3, 6)]
+
+Main> tryZip [True, False] [False, False]
+Just [(True, False), (False, False)]
+
+Main> tryZip ["hello"] ["nada", "adios"]
+Nothing
+
+Main> tryZip ['a', 'b', 'c'] ['d']
+Nothing
+#+END_SRC
+
+Voila.
+
+** Proofs vs testing
+One of the main things I hear a lot from dependent type enthusiasts is that proofs can replace testing.
+While it's nice to be able to formalise different properties of your code and provide proofs
+this doesn't mean that it is always easy to do. Certainly it is preferable to write a proof that holds
+for all values of some type instead of just some values that you write tests for, but formalising
+properties can become difficult when your code grows more complex. Of course, you can write proofs that
+go far beyond the simple things we have looked at today, but there are limits. Dependent types is still
+an active research space, and we don't have all the answers yet. So I can say with certainty that proofs
+cannot replace tests in the general sense.
+
+
+I hope this has given you a feel for dependent types and how they can be used. In this blogpost I've only
+scratched the surface and there are certainly lots of other more complex topics that I wish to touch on
+in the future. If you're interested in learning more about Idris and dependent types I've left several
+resources below.
+
+* Resources
+- [[https://www.idris-lang.org/][Idris homepage]]
+- [[https://www.manning.com/books/type-driven-development-with-idris][Type-Driven Development with Idris]]
+- [[https://youtu.be/IOiZatlZtGU][Propositions as Types by Philip Wadler at StrangeLoop (2015)]]
+- [[https://github.com/idris-hackers/software-foundations][Software foundations book in Idris]]
+- [[https://youtu.be/zSsCLnLS1hg][Edwin Brady's four part video series on dependent types in Idris]]
+
+[fn:1] You may be wondering what the =0= in front of =a= means. Idris 2 introduces linearity to types
+which lets you define how many times you can use some value. The =0= here means that we can't use those
+values since they are erased at runtime. Linear types are beyond the scope of this blogpost. For our
+purposes we can just ignore them, I've also removed linearity from some function signatures so as not
+to further confuse readers.
+
+[fn:2] Note that typed holes don't show top level module definitions which are in scope. For example if
+you were to define another top level function above =filter= it wouldn't show up in =?filter_rhs= even
+thought it may be perfectly valid to use in the implementation of =filter=.
+
+[fn:3] LHS is an acronym for left-hand side
+
+[fn:4] RHS is an acronym for right-hand side
+
+[fn:5] For the uninitiated the =zip= function takes two vectors and zips each element from both vectors
+in the same position together into a tuple. For this to work both vectors have to be of the same
+length. =zip : Vect n a -> Vect n b -> Vect n (a, b)=
+
+[fn:6] REPL stands for Read Eval Print Loop and is a common tool used for live interaction with your
+program
+
+[fn:7] The ==== function has the type signature =Eq ty => ty -> ty -> Bool= where =Eq ty= is a type
+constraint constraining the =ty= type variable to types that implement the =Eq= interface.
