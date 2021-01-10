@@ -1,5 +1,6 @@
+
 baseURL = "https://blog.vallipuram.dev"
-title = "Vallipuram blog"
+title = "λ Lambda jam blog"
 
 theme = "fuji"
 hasCJKLanguage = true
@@ -24,7 +25,7 @@ pygmentsStyle = "dracula"
 
 [params]
   author = "Vallipuram" # You can also set author in post front matter individually
-  subTitle = "A blog for programming, politics and other thoughts"
+  subTitle = "A blog for programming and other thoughts"
 
   # Use CloudFlare Workers to accelerate the Google Analytics
   # If you are using this please comment the googleAnalytics above
