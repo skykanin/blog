@@ -72,8 +72,6 @@ the Nixpkgs repository has so many packages even though they require contributio
 in a pull request (which is a good thing), unlike software repositories like the AUR where anything goes.
 
 #+CAPTION: Click the image for data source
-#+ATTR_HTML: :style border: 3px solid #8AA2D3;
-#+ATTR_HTML: :style border-radius: 6px;
 #+ATTR_HTML: :style padding: 12px 5px 0px 10px;
 [[https://repology.org/repositories/graphs?autorefresh=1][https://repology.org/graph/map_repo_size_fresh.svg]]
 

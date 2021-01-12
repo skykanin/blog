@@ -1,0 +1,36 @@
+{{ define "main" }}
+<main
+  class="lg:container mx-4 sm:mx-auto md:w-7/12 font-serif sm:w-3/4 lg:w-6/12 xl:w-5/12"
+>
+  <ul class="space-y-8">
+    {{ range .Pages.ByPublishDate.Reverse }}
+    <li>
+      <ul class="flex items-center justify-between">
+        <li>{{ .Date.Format "02 January, 2006" }}</li>
+        <li class="font-bold">
+          {{ .ReadingTime }} <span class="text-sm font-normal">{{ if eq .ReadingTime 1 }}minute{{ else }}minutes{{ end }}</span>
+        </li>
+      </ul>
+      <ul class="flex flex-wrap items-center space-x-3 mb-2">
+        {{ range .Params.Tags }}
+        <li>
+          <a
+            href="/tags/{{. | urlize}}/"
+            class="hover:border-blue-300 hover:text-blue-300 border-gray-700 px-1 text-xs font-mono rounded"
+            >{{.}}</a
+          >
+        </li>
+        {{ end }}
+      </ul>
+      <div class="content">
+        <a href="{{.RelPermalink}}" class="text-2xl font-bold">{{ .Title }}</a>
+        <div class="text-sm text-justify">
+          <p>{{ .Summary }}</p>
+        </div>
+      </div>
+    </li>
+    {{ end }}
+  </ul>
+  {{ partial "katex.html" . }}
+</main>
+{{ end }}
