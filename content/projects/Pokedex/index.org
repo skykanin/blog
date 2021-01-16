@@ -3,6 +3,6 @@
 #+TYPE: project
 #+TECH[]: Clojure React-Native Mobile RestAPI
 #+DESCRIPTION: Pokémon information app
-#+LINK: https://github.com/skykanin/pokedex
+#+REPO: https://github.com/skykanin/pokedex
 
 A Pokédex app which gives you all the details of every Pokémon in the database.

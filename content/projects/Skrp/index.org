@@ -3,6 +3,6 @@
 #+TYPE: project
 #+TECH[]: Clojure JavaScript Python NetJSON
 #+DESCRIPTION: NetJSON prototype
-#+LINK: https://github.com/it2901/Skrp
+#+REPO: https://github.com/it2901/Skrp
 
 Proof of concept showing the use of the [[https://netjson.org/][NetJSON]] specification to collect information about networks for monitoring purposes and making adaptions to the network for optimisation purposes.

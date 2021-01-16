@@ -3,6 +3,6 @@
 #+TYPE: project
 #+TECH[]: Python Discord API
 #+DESCRIPTION: Discord moderation and misc bot
-#+LINK: https://github.com/skykanin/Christopher-Bot
+#+REPO: https://github.com/skykanin/Christopher-Bot
 
 A [[https://discord.com][Discord]] bot for moderation and other misc features that interact with various different APIs.

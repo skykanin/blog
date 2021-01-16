@@ -3,7 +3,7 @@
 #+TYPE: project
 #+TECH[]: Haskell Nix OpenGL
 #+DESCRIPTION: Conways game of life
-#+LINK: https://github.com/skykanin/GameOfLife
+#+REPO: https://github.com/skykanin/GameOfLife
 
 A simple GUI implementation of [[https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life][Conways Game of Life]] with different starting states showing
 off the interesting complex patterns that can emerge from a set of simple rules.

@@ -3,6 +3,6 @@
 #+TYPE: project
 #+TECH[]: Haskell Nix NCurses TUI
 #+DESCRIPTION: Terminal user interface for LastPass
-#+LINK: https://github.com/skykanin/lastpass-tui
+#+REPO: https://github.com/skykanin/lastpass-tui
 
 A terminal user interface client for the [[https://www.lastpass.com/][LastPass]] password manager.

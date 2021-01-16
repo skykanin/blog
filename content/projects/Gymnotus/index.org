@@ -3,6 +3,6 @@
 #+TYPE: project
 #+TECH[]: Java JavaFX JDBC
 #+DESCRIPTION: Workout companion app
-#+LINK: https://github.com/skykanin/Gymnotus-SE-project
+#+REPO: https://github.com/skykanin/Gymnotus-SE-project
 
 A GUI application for tracking your workout sessions and displaying related data.
