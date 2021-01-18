@@ -6,7 +6,7 @@ module.exports = {
     pureLayersByDefault: true,
   },
   purge: {
-    content: ["./layouts/**/*.html", "./content/**/*.md", "./content/**/*.html"],
+    content: ["./layouts/**/*.html"],
   },
   theme: {
     colors: {
