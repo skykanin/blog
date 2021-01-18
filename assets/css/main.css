@@ -12,6 +12,11 @@ html, body {
   @apply my-2;
   text-align: justify;
 }
+
+.content li p {
+  display: inline;
+}
+
 .content p code {
   background-color: #282a36;
   color: #dcd0d0;
@@ -21,6 +26,12 @@ html, body {
 .content ul {
   list-style-type: disc;
   list-style-position: inside;
+  @apply space-y-3.5;
+  @apply my-2;
+}
+
+.content sup {
+  @apply text-xs;
 }
 
 .content ol {
@@ -66,6 +77,13 @@ html, body {
   padding-top: 0.4rem;
   padding-bottom: 0.4rem;
   overflow: auto;
+}
+
+.footnotes-separatator {
+  @apply bg-white;
+  @apply my-4;
+  @apply rounded-sm;
+  @apply h-1.5;
 }
 
 .noselect {
