@@ -879,8 +879,7 @@ thought it may be perfectly valid to use in the implementation of =filter=.
 in the same position together into a tuple. For this to work both vectors have to be of the same
 length. =zip : Vect n a -> Vect n b -> Vect n (a, b)=
 
-[fn:6] REPL stands for Read Eval Print Loop and is a common tool used for live interaction with your
-program
+[fn:6] REPL stands for Read Eval Print Loop and is a common tool used for live interaction with your program
 
 [fn:7] The ==== function has the type signature =Eq ty => ty -> ty -> Bool= where =Eq ty= is a type
 constraint constraining the =ty= type variable to types that implement the =Eq= interface.
