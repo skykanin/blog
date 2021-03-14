@@ -1,0 +1,8 @@
+#+TITLE: DraftGen
+#+DATE: 2021-03-10
+#+TYPE: project
+#+TECH[]: Haskell Scryfall RestAPI
+#+DESCRIPTION: A Magic: The gathering booster pack generator
+#+REPO: https://github.com/skykanin/DraftGen
+
+A small CLI tool for generating booster packs to be imported as assets to Tabletop Simulator.
