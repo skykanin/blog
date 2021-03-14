@@ -14,11 +14,13 @@
     <link href="{{ "css/syntax.css" | absURL }}" rel="stylesheet"/>
     <link href="{{ "css/fonts.css" | absURL }}" rel="stylesheet"/>
     <meta charset="utf-8">
+    <meta name="keywords" content="{{ delimit (union (slice "Tech" "Programming") .Params.Tags) ", " }}">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <meta name="description" content="{{ .Description}} - Read more: {{ .Permalink }}">
     <script async src="https://cdn.jsdelivr.net/npm/loading-attribute-polyfill@0.2.0/loading-attribute-polyfill.min.js" integrity="sha256-kX73NqVUoUbV0K44kgoqP8P8IZfU0OEjr/afCnK2Mrg=" crossorigin="anonymous"></script>
   </head>
   <nav>
-    <ul class="h-16 mx-auto flex items-center justify-evenly lg:justify-between px-0 w-full lg:w-2/5 py-4 mb-6 text-3xl">
+    <ul class="h-16 mx-auto flex items-center justify-evenly lg:justify-between px-0 w-full lg:w-2/5 py-4 mb-6 text-3xl sm:text-2xl">
       <li class="space-x-2 sm:space-x-4 md:space-x-8 capitalize font-bold font-serif">
         <a href="/" class="hover:text-pink-light">
           <svg 
