@@ -1,0 +1,8 @@
+#+TITLE: FilmGuru
+#+DATE: 2018-10-01
+#+TYPE: project
+#+TECH[]: JavaScript React Redux RestAPI Node.js
+#+DESCRIPTION: An internet movie database
+#+REPO: https://github.com/skykanin/webdev-project-group38
+
+An internet movie database for looking up your favourite movie and viewing ratings.
