@@ -5,4 +5,4 @@
 #+DESCRIPTION: A Magic: The gathering booster pack generator
 #+REPO: https://github.com/skykanin/DraftGen
 
-A small CLI tool for generating booster packs to be imported as assets to Tabletop Simulator.
+A small CLI tool for generating booster packs for Magic: The Gathering the card game to be imported as assets to Tabletop Simulator.
