@@ -1,7 +1,7 @@
 #+TITLE: DraftGen
 #+DATE: 2021-03-10
 #+TYPE: project
-#+TECH[]: Haskell Scryfall RestAPI
+#+TECH[]: Haskell CLI RestAPI
 #+DESCRIPTION: A Magic: The gathering booster pack generator
 #+REPO: https://github.com/skykanin/DraftGen
 
