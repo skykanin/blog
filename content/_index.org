@@ -7,7 +7,7 @@ This is my personal website where I write blog posts sometimes and keep a tab of
 I've been programming since 2016 or so and I try to keep all my projects public for others to see. My main interestest are functional programming, web programming, programming languages, dependent type theory and proofs. Over the years I've programmed in a plethora of lanugages including mainstream languages like Java, Kotlin, Python and Javascript to more functional oriented languages like Haskell and Clojure.
 
 * [[/posts][Posts]]
-I try and write blog posts whenever I working on an interesting project or explanatory posts about different computer science or technology related domains.
+I try and write blog posts whenever I'm working on an interesting project or explanatory posts about different computer science or technology related domains.
 
 * [[/projects][Projects]]
 A majority of my programming work involves working on side-projects. These either come in the form of proof of concepts prototypes or larger projects like applications or APIs.
