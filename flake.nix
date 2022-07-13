@@ -1,14 +1,20 @@
  {
   description = "A flake for the website dev environment";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs = {
+    # Unofficial library of utilities for managing Nix Flakes.
+    flake-utils.url = "github:numtide/flake-utils";
 
-  outputs = { self, nixpkgs }: {
-    devShell.x86_64-linux =
-      with import nixpkgs { system = "x86_64-linux"; };
-      mkShell {
-        buildInputs = [ hugo ];
-        # shellHook = "fish";
-      };
+    # Nix package set
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
+
+  outputs = { self, flake-utils, nixpkgs }:
+    flake-utils.lib.eachDefaultSystem (system: {
+      devShells.default =
+        let pkgs = nixpkgs.legacyPackages.${system};
+        in pkgs.mkShell {
+          buildInputs = with pkgs; [ hugo ];
+        };
+  });
 }         
