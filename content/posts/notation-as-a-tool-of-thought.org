@@ -1,0 +1,34 @@
+#+title: Notation As A Tool Of Thought
+#+date: 2023-03-26T19:29:00+02:00
+#+draft: true
+#+tags[]: array BQN functional iversonian
+
+Last year while doing [[https://adventofcode.com/][advent of code]] I came across the [[https://en.wikipedia.org/wiki/APL_(programming_language)][APL]] programming language. I had always been interested in exploring array programming, but the highly imperative nature of tools like [[https://numpy.org/][NumPy]], [[https://www.r-project.org/][R]], [[https://julialang.org/][Julia]] and [[https://www.mathworks.com/products/matlab.html][Matlab]] turned me off. Luckily APL has the best of both worlds as a functional array programming language with first class support for multi-dimensional arrays. More recently I've been playing around with [[https://mlochbaum.github.io/BQN/][BQN]], a modern variant of APL, which is what I'll be exploring today.
+
+* History
+
+In 1957 [[https://en.wikipedia.org/wiki/Kenneth_E._Iverson][Ken Iverson]] developed a mathematical notation for manipulating arrays which became the basis of the book he later published called /A Programming Language/. The preface states its premise:
+
+#+begin_quote
+Applied mathematics is largely concerned with the design and analysis of explicit procedures for calculating the exact or approximate values of various functions. Such explicit procedures are called algorithms or programs. Because an effective notation for the description of programs exhibits considerable syntactic structure, it is called a programming language.
+#+end_quote
+
+This notation would be used inside IBM, where he worked, for short research reports on computer systems.
+
+* Hello BQN!
+
+As APL is quite an old idea by now the language has accrued many irregular and burdensome aspects. BQN attempts to address these issues and incorporates concepts developed over the years of APL in practice. One of the first things you notice about the syntax is that it uses unicode characters for primitives.
+
+#+BEGIN_SRC bqn
+⊑¨ "Big"‿"Questions"‿"Notation"
+"BQN"
+
+×⌜˜ 1+↕5
+┌─
+╵ 1  2  3  4  5
+  2  4  6  8 10
+  3  6  9 12 15
+  4  8 12 16 20
+  5 10 15 20 25
+                ┘
+#+END_SRC
