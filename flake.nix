@@ -14,6 +14,7 @@
       devShells.default =
         let pkgs = nixpkgs.legacyPackages.${system};
         in pkgs.mkShell {
+          name = "dev-shell";
           buildInputs = with pkgs; [ hugo ];
         };
   });
