@@ -58,7 +58,7 @@ How about tables then?
 * Embed tweets using short codes
 
 #+CAPTION: captioned twitter link
-{{< tweet 502826405479317504 >}}
+{{< tweet bbatsov 502826405479317504 >}}
 * LaTeX
 {{< katex "["display"]" >}}
 c = \pm\sqrt{a^2 + b^2}
