@@ -5,11 +5,11 @@ Hi, I am Nicholas. I studied computer science at [[https://ntnu.edu][NTNU]] and 
 
 This is my personal website where I write blog posts sometimes and keep a tab of all the interesting projects I've worked on.
 
-I've been programming since 2016 or so and I try to keep all my projects public for others to see. My main interestest are functional programming, web programming, programming languages, dependent type theory and proofs. Over the years I've programmed in a plethora of lanugages including mainstream languages like Java, Kotlin, Python and Javascript to more functional oriented languages like Haskell, Idris and Clojure.
+I've been programming since 2016 or so and I try to keep all my projects public for others to see. My main interests are functional programming, web programming, programming languages, dependent type theory and proofs. Over the years I've programmed in a plethora of languages including mainstream languages like Java, Kotlin, Python and Javascript to more functional oriented languages like Haskell, Idris and Clojure.
 
 * [[/posts][Posts]]
 I try and write blog posts whenever I'm working on an interesting project or explanatory posts about different computer science or technology related domains.
 
 * [[/projects][Projects]]
 In my spare time I sometimes like working on side-projects. These either come in the form of proof of concepts prototypes or larger projects like applications or APIs.
-I also have a catalog of [[https://gist.github.com/skykanin][gists]] that I upload to GitHub. I usually make these when exploring different concepts or feel like I've solved a problem in an elegant way.
+I also have a catalogue of [[https://gist.github.com/skykanin][gists]] that I upload to GitHub. I usually make these when exploring different concepts or feel like I've solved a problem in an elegant way.
