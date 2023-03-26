@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
+html,
+body {
   @apply bg-black;
   @apply text-white;
 }
@@ -79,6 +80,17 @@ html, body {
   overflow: auto;
 }
 
+blockquote {
+  @apply p-2.5;
+  @apply border-l-8;
+  @apply border-pink-dark;
+  @apply rounded-md;
+  @apply bg-brown;
+  @apply opacity-70;
+  @apply text-black;
+  @apply italic;
+}
+
 .footnotes-separatator {
   @apply bg-white;
   @apply my-4;
@@ -88,15 +100,19 @@ html, body {
 
 .noselect {
   -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome, Edge, Opera and Firefox */
 }
 
 /* VERY IMPORTANT: fractions are borked otherwise in katex */
-*, ::after, ::before { border-color: #000 }
+*,
+::after,
+::before {
+  border-color: #000;
+}
 
 /* purgecss end ignore */

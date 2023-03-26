@@ -11,9 +11,14 @@ defaultContentLanguage = "en"  # For HTML page, now support: en, zh-hans, zh-han
 [markup]
   [markup.goldmark]
     [markup.goldmark.renderer]
-      unsafe = false  # Enable user to embed HTML snippets in Markdown content
+      unsafe = false # Enable user to embed HTML snippets in Markdown content
   [markup.highlight]
-    codeFences = false  # Disable Hugo's code highlighter
+    linenos = false
+    codeFences = false
+    noClasses=true
+    guessSyntax = false
+    style = 'dracula'
+    tabWidth = 2
 
   [markup.tableOfContents]
     startLevel = 2

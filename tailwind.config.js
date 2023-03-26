@@ -5,14 +5,12 @@ module.exports = {
     removeDepricatedGapUtilities: true,
     pureLayersByDefault: true,
   },
-  purge: {
-    content: ["./layouts/**/*.html"],
-  },
+ content: ["./layouts/**/*.html"],
   theme: {
     colors: {
       transparent: "transparent",
       black: "#1C1D21",
-      gray: colors.coolGray,
+      gray: colors.gray,
       blue: colors.blue,
       white: "#F1E3E4",
       brown: "#CCBCBC",
