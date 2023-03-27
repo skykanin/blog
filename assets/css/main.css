@@ -8,10 +8,9 @@ body {
   @apply text-white;
 }
 
-/* purgecss start ignore */
 .content p {
   @apply my-2;
-  text-align: justify;
+  @apply text-justify;
 }
 
 .content li p {
@@ -19,9 +18,10 @@ body {
 }
 
 .content p code {
-  background-color: #282a36;
-  color: #dcd0d0;
+  @apply bg-gray;
+  @apply text-brown-light;
   @apply rounded;
+  @apply p-0.5;
 }
 
 .content ul {
@@ -70,28 +70,53 @@ body {
 
 .highlight pre {
   @apply border-2;
-  @apply border-gray-700;
+  @apply border-gray;
   @apply rounded;
   @apply my-2;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  @apply pl-2;
+  @apply pr-2;
   padding-top: 0.4rem;
   padding-bottom: 0.4rem;
-  overflow: auto;
+  @apply overflow-auto;
 }
 
-blockquote {
+.content blockquote {
   @apply p-2.5;
   @apply border-l-8;
   @apply border-pink-dark;
   @apply rounded-md;
-  @apply bg-brown;
+  @apply bg-brown-light;
   @apply opacity-70;
   @apply text-black;
   @apply italic;
 }
 
-.footnotes-separatator {
+.content table {
+  @apply ml-auto;
+  @apply mr-auto;
+  @apply mt-10;
+  @apply mb-10;
+  @apply bg-blue-gray;
+}
+
+.content table,
+th,
+td {
+  @apply p-3;
+  @apply border-2;
+  @apply border-collapse;
+  @apply border-gray;
+}
+
+/* When inside table use different style for verbatim code */
+.content table code.verbatim {
+  @apply bg-gray;
+  @apply text-blue;
+  @apply rounded-sm;
+  @apply p-0.5;
+}
+
+.content .footnotes-separatator {
   @apply bg-white;
   @apply my-4;
   @apply rounded-sm;

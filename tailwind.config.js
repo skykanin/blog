@@ -10,10 +10,11 @@ module.exports = {
     colors: {
       transparent: "transparent",
       black: "#1C1D21",
-      gray: colors.gray,
-      blue: colors.blue,
+      gray: colors.gray["700"],
+      blue: colors.blue["200"],
+      'blue-gray': "#282A36",
       white: "#F1E3E4",
-      brown: "#CCBCBC",
+      'brown-light': "#DCD0D0",
       pink: {
         light: "#BB9BB0", 
         dark: "#A288A6",

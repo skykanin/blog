@@ -17,18 +17,83 @@ This notation would be used inside IBM, where he worked, for short research repo
 
 * Hello BQN!
 
-As APL is quite an old idea by now the language has accrued many irregular and burdensome aspects. BQN attempts to address these issues and incorporates concepts developed over the years of APL in practice. One of the first things you notice about the syntax is that it uses unicode characters for primitives.
+As APL is quite an old idea by now the language has accrued many irregular and burdensome aspects. BQN attempts to address these issues and incorporates concepts developed over the years of APL in practice. One of the first things to notice about the syntax is that it uses unicode characters for primitives.
 
 #+BEGIN_SRC bqn
 ⊑¨ "Big"‿"Questions"‿"Notation"
 "BQN"
+#+END_SRC
 
-×⌜˜ 1+↕5
+Expressions in BQN consists of subjects, functions and modifiers. Functions can be applied to subjects or grouped into trains, while modifiers can be applied to subjects or functions. The most important kinds of application are:
+
+| example | left | main  | right | output   | name       |
+|---------+------+-------+-------+----------+------------|
+| =↕ 10=  | =w?= | =F=   | =x=   | Subject  | Function   |
+| =+ ⋈ -= | =F?= | =G=   | =H=   | Function | Train      |
+| =x´=    | =F=  | =_m=  |       | Function | 1-Modifier |
+| =2⊸⌊=   | =F=  | =_c_= | =G=   | Function | 2-Modifier |
+
+In the table, =?= marks an optional left argument. If there isn't a value in that position, the main function will be called with only one argument.
+
+All primitive functions in BQN have two forms. Depending on how many arguments are applied they behave differently. When one argument is applied it's known as /monadic/ and when two arguments are applied; /dyadic/.
+
+#+BEGIN_SRC bqn
+× 4
+1
+
+2 × 4
+8
+#+END_SRC
+
+In its monadic form =×= is **signum**, when applied dyadically its multiplication.
+
+#+BEGIN_SRC bqn
+⌽ 1‿2‿3‿4‿5
+⟨ 5 4 3 2 1 ⟩
+
+2 ⌽ 1‿2‿3‿4‿5
+⟨ 3 4 5 1 2 ⟩
+#+END_SRC
+
+In its monadic form =⌽= is **reverse**, when applied dyadically its **rotate**. Lists in BQN can either be written using the =⟨⟩= syntax with comma separated values or using the stranding =‿= notation =1‿2‿3=.
+
+One might think with all these prefix and infix functions parsing the fixity becomes difficult, but luckily there is only /one/ rule you need to remember. All function application is right associative, regardless of the function.
+
+#+BEGIN_SRC bqn
+10 ÷ (2 + 3) # is the same as
+10 ÷ 2 + 3   # which reduces to
+2
+#+END_SRC
+
+BQN also has 1-/2-modifiers. Which modify the behaviour of the arguments that are passed to them.
+
+#+BEGIN_SRC bqn
++´ ⟨ 1, 2, 3, 4, 5 ⟩ # fold aka. reduce
+15
+
++` ⟨ 1, 1, 1, 1, 1 ⟩ # scan
+⟨ 1 2 3 4 5 ⟩
+
+×∘⊑ 7‿2‿3 # function composition
+1
+
+#+END_SRC
+
+Modifiers are easily recognisable. All 1-Modifiers are superscript, while all 2-Modifiers contain an unbroken circle. All modifiers are left associative.
+
+BQN also supports blocks otherwise known as anonymous functions or lambdas where =𝕩= denotes the left argument and =𝕨= denotes the right. One can also assign variables using the =←= arrow.
+
+#+BEGIN_SRC bqn
+Evens ← { (¬ 2 | 𝕩) / 𝕩 } # even elements
+
+Evens ⟨ 1, 2, 3, 4 ⟩
+⟨ 2 4 ⟩
+
+Windows ← { 𝕨 ↕ 1 + ↕ 𝕩 } # 𝕨 element windows in 1-indexed range 𝕩
+
+2 Windows 3
 ┌─
-╵ 1  2  3  4  5
-  2  4  6  8 10
-  3  6  9 12 15
-  4  8 12 16 20
-  5 10 15 20 25
-                ┘
+╵ 1 2
+  2 3
+      ┘
 #+END_SRC
