@@ -79,9 +79,9 @@ BQN also has 1-/2-modifiers. Which modify the behaviour of the arguments that ar
 
 #+END_SRC
 
-Modifiers are easily recognisable. All 1-Modifiers are superscript, while all 2-Modifiers contain an unbroken circle. All modifiers are left associative.
+Modifiers are easily recognisable. All 1-Modifiers are superscript, while all 2-Modifiers contain an unbroken circle like =○=, =⌾=, =⍟=, =⚇= or =⊸=. Modifiers all associate to the left.
 
-BQN also supports blocks otherwise known as anonymous functions or lambdas where =𝕩= denotes the left argument and =𝕨= denotes the right. One can also assign variables using the =←= arrow.
+BQN also supports blocks, otherwise known as anonymous functions or lambdas where =𝕩= denotes the left argument and =𝕨= denotes the right. One can also assign names to values using the =←= arrow.
 
 #+BEGIN_SRC bqn
 Evens ← { (¬ 2 | 𝕩) / 𝕩 } # even elements
@@ -97,3 +97,27 @@ Windows ← { 𝕨 ↕ 1 + ↕ 𝕩 } # 𝕨 element windows in 1-indexed range 
   2 3
       ┘
 #+END_SRC
+
+* Multi dimensional arrays and rank polymorphism
+
+As an array programming language arrays are unsurprisingly the core data structure used for manipulating data. BQN also supports first class multi-dimensional arrays.
+#+BEGIN_SRC bqn
+"ABC" ⋈⌜ "01234"
+┌─
+╵ "A0" "A1" "A2" "A3" "A4"
+  "B0" "B1" "B2" "B3" "B4"
+  "C0" "C1" "C2" "C3" "C4"
+                           ┘
+#+END_SRC
+Here we use the outer product 1-Modifier =⌜= pronounced table to produce a table of all the combinations of characters in the two strings since strings can be treated as lists of characters.
+If we wanted to join all the elements in the table row-wise we could write:
+#+BEGIN_SRC bqn
+∾´˘ "ABC" ∾⌜ "01234"
+┌─
+╵"A0A1A2A3A4
+  B0B1B2B3B4
+  C0C1C2C3C4"
+             ┘
+#+END_SRC
+
+The =˘= cells modifier changes how the function is applied so that =𝔽˘= applies =𝔽= to the major cells of its argument =𝕩=. A major cell is a component of an array with dimension one smaller, so that the major cells of a list are units, the major cells of a rank-2 table are its rows (which are lists), and the major cells of a rank-3 array are tables. The cells modifier is a shorthand for the more general 2-Modifer =⎉= pronounced rank which lets you specify the rank. Therefore =𝔽˘= is defined as =𝔽⎉¯1=.
