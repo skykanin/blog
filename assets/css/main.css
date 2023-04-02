@@ -29,15 +29,11 @@ body {
   list-style-position: inside;
   @apply space-y-3.5;
   @apply my-2;
+  @apply ml-4;
 }
 
 .content sup {
   @apply text-xs;
-}
-
-.content ol {
-  list-style-type: decimal;
-  list-style-position: inside;
 }
 
 .content h1 {
@@ -53,6 +49,11 @@ body {
 
 .content h3 {
   @apply text-2xl;
+  @apply font-bold;
+}
+
+.content h4 {
+  @apply text-xl;
   @apply font-bold;
 }
 

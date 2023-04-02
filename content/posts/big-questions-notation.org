@@ -1,0 +1,568 @@
+#+title: Big Questions Notation
+#+date: 2023-04-02T15:30:00+02:00
+#+tags[]: array BQN functional iversonian
+
+Last year while doing [[https://adventofcode.com/][advent of code]] I came across the [[https://en.wikipedia.org/wiki/APL_(programming_language)][APL]] programming language. I had always been interested in exploring array programming, but the highly imperative nature of tools like [[https://numpy.org/][NumPy]], [[https://www.r-project.org/][R]], [[https://julialang.org/][Julia]] and [[https://www.mathworks.com/products/matlab.html][Matlab]] turned me off. Luckily APL has the best of both worlds as a functional array programming language with first class support both for functions /and/ multi-dimensional arrays. More recently I've been playing around with [[https://mlochbaum.github.io/BQN/][BQN]], a modern variant of APL, which is what I'll be exploring today.
+
+* History
+
+In 1957 [[https://en.wikipedia.org/wiki/Kenneth_E._Iverson][Ken Iverson]] developed a mathematical notation for manipulating arrays which became the basis of the book he later published called /A Programming Language/. The preface states its premise:
+
+#+begin_quote
+Applied mathematics is largely concerned with the design and analysis of explicit procedures for calculating the exact or approximate values of various functions. Such explicit procedures are called algorithms or programs. Because an effective notation for the description of programs exhibits considerable syntactic structure, it is called a programming language.
+#+end_quote
+
+Iversons idea was to build a notation for general purpose programming that could serve as a tool of thought in the same way mathematical notation has.[fn:1] The notation he developed would be used inside IBM, where he worked, for short research reports on computer systems and would later become the basis for APL.
+
+* Hello BQN!
+
+As APL is quite an old idea by now the language has accrued many irregular and burdensome aspects. BQN attempts to address these issues and incorporates concepts developed over the years of APL in practice. One of the first things to notice about the syntax is that it uses unicode characters for different primitives.
+
+#+BEGIN_SRC bqn
+⊑¨ "Big"‿"Questions"‿"Notation"
+"BQN"
+#+END_SRC
+
+Expressions in BQN consists of subjects, functions and modifiers. Functions can be applied to subjects or grouped into trains, while modifiers can be applied to subjects or functions. The most important kinds of application are:
+
+| example | left | main  | right | output   | name       |
+|---------+------+-------+-------+----------+------------|
+| =↕ 10=  | =w?= | =F=   | =x=   | Subject  | Function   |
+| =+ ⋈ -= | =F?= | =G=   | =H=   | Function | Train      |
+| =x´=    | =F=  | =_m=  |       | Function | 1-Modifier |
+| =2⊸⌊=   | =F=  | =_c_= | =G=   | Function | 2-Modifier |
+
+In the table, =?= marks an optional left argument. If there isn't a value in that position, the main function will be called with only one argument.
+
+All primitive functions in BQN have two forms. Depending on how many arguments are applied they behave differently. When one argument is applied it's known as /monadic/ and when two arguments are applied; /dyadic/.
+
+#+BEGIN_SRC bqn
+× 4
+1
+
+2 × 4
+8
+#+END_SRC
+
+In its monadic form =×= is **signum**, when applied dyadically it's multiplication.
+
+#+BEGIN_SRC bqn
+⌽ 1‿2‿3‿4‿5
+⟨ 5 4 3 2 1 ⟩
+
+2 ⌽ 1‿2‿3‿4‿5
+⟨ 3 4 5 1 2 ⟩
+#+END_SRC
+
+In its monadic form =⌽= is **reverse**, when applied dyadically its **rotate**. Lists in BQN can either be written using the =⟨⟩= syntax with comma separated values or using the stranding =‿= notation =1‿2‿3=.
+
+One might think with all these prefix and infix functions parsing the fixity becomes difficult, but luckily there is only /one/ rule you need to remember. All function application is right associative, regardless of the function.
+
+#+BEGIN_SRC bqn
+10 ÷ (2 + 3) # is the same as
+10 ÷ 2 + 3   # which reduces to
+2
+#+END_SRC
+
+BQN also has 1-/2-modifiers. Which modify the behaviour of the arguments that are passed to them.
+
+#+BEGIN_SRC bqn
++´ ⟨ 1, 2, 3, 4, 5 ⟩ # fold aka. reduce
+15
+
++` ⟨ 1, 1, 1, 1, 1 ⟩ # scan
+⟨ 1 2 3 4 5 ⟩
+
+×∘⊑ 7‿2‿3 # function composition
+1
+
+#+END_SRC
+
+Modifiers are easily recognisable. All 1-Modifiers are superscript, while all 2-Modifiers contain an unbroken circle like =○=, =⌾=, =⍟=, =⚇= or =⊸=. Modifiers all associate to the left.
+
+BQN also supports blocks, otherwise known as anonymous functions or lambdas where =𝕩= denotes the left argument and =𝕨= denotes the right. One can also assign names to values using the =←= arrow.
+
+#+BEGIN_SRC bqn
+Evens ← { (¬ 2 | 𝕩) / 𝕩 } # even elements
+
+Evens ⟨ 1, 2, 3, 4 ⟩
+⟨ 2 4 ⟩
+
+# 𝕨 element windows in 1-indexed range 𝕩
+Windows ← { 𝕨 ↕ 1 + ↕ 𝕩 }
+
+2 Windows 3
+┌─
+╵ 1 2
+  2 3
+      ┘
+
+4 Windows 6
+┌─
+╵ 1 2 3 4
+  2 3 4 5
+  3 4 5 6
+          ┘
+#+END_SRC
+
+* Multi dimensional arrays and rank polymorphism
+
+As an array programming language arrays are unsurprisingly the core data structure used for manipulating data. BQN also supports first class multi-dimensional arrays.
+#+BEGIN_SRC bqn
+"ABC" ∾ "01234"
+"ABC01234"
+
+"ABC" ∾⌜ "01234"
+┌─
+╵ "A0" "A1" "A2" "A3" "A4"
+  "B0" "B1" "B2" "B3" "B4"
+  "C0" "C1" "C2" "C3" "C4"
+                           ┘
+#+END_SRC
+Here we use the outer product 1-Modifier =⌜= pronounced table on =∾= join to produce a table of all the combinations of characters in the two strings. This works because strings are simply treated as lists of characters.
+If we wanted to join all the elements in the table row-wise we could write:
+#+BEGIN_SRC bqn
+∾´˘ "ABC" ∾⌜ "01234"
+┌─
+╵"A0A1A2A3A4
+  B0B1B2B3B4
+  C0C1C2C3C4"
+             ┘
+#+END_SRC
+
+The =˘= cells modifier changes how the function is applied so that =𝔽˘= applies =𝔽= to the major cells of its argument =𝕩=. A major cell is a component of an array with dimension one smaller, so the major cells of a list are units, the major cells of a rank-2 table are its rows (which are lists), and the major cells of a rank-3 array are tables. The cells modifier is a shorthand for the more general 2-Modifer =⎉= pronounced rank which lets you specify the rank you want a function to operate on. Therefore =𝔽˘= is defined as =𝔽⎉¯1=.
+
+Another important aspect of BQN is that all functions are rank polymorphic.
+
+#+BEGIN_SRC bqn
+1 + 1
+2
+#+END_SRC
+
+As you would expect one plus one equals 2, no surprises so far, however what happens if we try to add one to a list of numbers?
+
+#+BEGIN_SRC bqn
+1 + 1‿2‿3‿4
+⟨ 2 3 4 5 ⟩
+#+END_SRC
+
+The argument is mapped over the entire list. What about adding a list to another list?
+
+#+BEGIN_SRC bqn
+4‿3‿2‿1 + 1‿2‿3‿4
+⟨ 5 5 5 5 ⟩
+#+END_SRC
+
+The elements at the same indices are zipped together. What tables?
+
+#+BEGIN_SRC bqn
+m ← [[1,2],[3,4]]
+┌─
+╵ 1 2
+  3 4
+      ┘
+m + m
+┌─
+╵ 2 4
+  6 8
+      ┘
+#+END_SRC
+
+The result is matrix addition. This kind of function polymorphism scales to any arbitrarily ranked array.
+
+* Solving problems the array way
+
+The combination of all these language features in addition to the included primitive functions make for a very expressive language. So let's try solving a [[https://leetcode.com/problems/maximum-difference-between-increasing-elements][LeetCode problem]] to see what a BQN solution could look like.
+
+The problem statement is as follows:
+Given a 0-indexed integer array =nums= of size =n=, find the maximum difference between =nums[i]= and =nums[j]=, such that =0 ≤ i < j < n= and =nums[i] < nums [j]=. Return the maximum difference. If no such =i= and =j= exists, return =-1=.
+
+Essentially we want to return the maximum difference of two elements in the list where the element which appears earlier in the list is smaller than the element which appears later. So an input like =⟨7, 1, 5, 4⟩= should return =5 - 1 -> 4=, =⟨9,4,3,2⟩= should return =-1= and =⟨1,5,2,10⟩= should return =10 - 1 -> 9=.
+
+One way to solve this in a functional style would be to first do a min scan on the input list, producing a list of the minimum elements in every sub-list of the list and subtract that result from the original list.
+
+#+BEGIN_SRC bqn
+# Minimum function
+3 ⌊ 6
+3
+
+# Left associative min scan
+⌊` ⟨7, 1, 5, 4⟩
+⟨ 7 1 1 1 ⟩
+
+# Subtract from original argument
+{𝕩 - ⌊`𝕩} ⟨7, 1, 5, 4⟩
+⟨ 0 0 4 3 ⟩
+#+END_SRC
+
+This resulting list enumerates all the values that could be our answer except for the zeros so we remove them using the replicate =/= function. Its left argument being a list of numbers indicating how many times we want to /replicate/ the corresponding value at the equivalent index in the right argument.
+
+#+BEGIN_SRC bqn
+list ← ⟨1, 2, 3, 4⟩
+
+⟨0, 1, 0, 1⟩ / ⟨1, 2, 3, 4⟩ # remove all odd elements
+⟨ 2 4 ⟩
+
+⟨2, 1, 2, 1⟩ / ⟨1, 2, 3, 4⟩ # double all odd elements
+⟨ 1 1 2 3 3 4 ⟩
+#+END_SRC
+
+Since booleans are represented as =0= and =1= in BQN we can pass the original list to a function which generates a boolean mask to filter out all the zeros like so:
+
+#+BEGIN_SRC bqn
+0 ≠ ⟨0, 0, 4, 3⟩ # produce boolean mask
+⟨ 0 0 1 1 ⟩
+
+⟨0, 0, 1, 1⟩ / ⟨0, 0, 4, 3⟩ # remove zeros
+⟨ 4 3 ⟩
+
+{{(0≠𝕩) / 𝕩} 𝕩 - ⌊`𝕩} ⟨7, 1, 5, 4⟩ # putting it together
+⟨ 4 3 ⟩
+#+END_SRC
+
+Note that the =𝕩= in the inner function block refers to its own argument and not the argument of the outer function. Lastly, since we want to find the max difference we pick the largest element in the list and return =-1= if it's empty. This can be done with a simple fold (aka. reduce) using max =⌈= as the reducing function.
+
+#+BEGIN_SRC bqn
+¯1 ⌈´ ⟨ 4, 3 ⟩
+4
+
+¯1 ⌈´ ⟨ ⟩ # default to ¯1 if list is empty
+¯1
+#+END_SRC
+
+So our complete solution will look like this:
+#+BEGIN_SRC bqn
+F ← {¯1⌈´ {(0≠𝕩) / 𝕩} 𝕩 - ⌊`𝕩}
+
+F ⟨7, 1, 5, 4⟩
+4
+
+F ⟨9, 4, 3, 2⟩
+¯1
+
+F ⟨1, 5, 2, 10⟩
+9
+#+END_SRC
+
+This solution is quite succinct already, however as any BQNer would tell you, we can do better.
+
+* Trainspotting
+
+The last major feature of BQN and other APL derived languages which we haven't looked as yet is tacit programming. BQN has explicit support for writing terse code through the use of combinators so that function arguments don't have to be written explicitly. In functional programming languages this is often referred to as point-free programming. In BQN it's called tacit programming.
+
+Functions in BQN can be applied to other functions to form so-called trains. There are two elementary trains which everything else builds on. These are the 2-train and the 3-train which abstract over common patterns of function composition.
+
+In the monadic form a 2-train is equivalent to the explicit definition which isn't very interesting.
+
+#+BEGIN_SRC bqn
+{- ⌊´ 𝕩} ⟨3, 6, 0, ¯8⟩
+# is equivalent to
+(- ⌊´) ⟨3, 6, 0, ¯8⟩
+#+END_SRC
+
+However in its dyadic form it's a bit more interesting.
+
+#+BEGIN_SRC bqn
+# Here G is a dyadic function
+left {F 𝕨 G 𝕩} right
+
+# Equivalent tacit version
+left (F G) right
+
+# Join the lists together and return the sum
+⟨1, 2⟩ (+´ ∾) ⟨3, 4⟩
+10
+#+END_SRC
+
+BQN also has a 2-Modifier called atop =∘= for this purpose so that one doesn't have to explicitly parenthesise the expression.
+
+#+BEGIN_SRC bqn
+# Monadic application
+-∘(⌊´) ⟨3, 6, 0, ¯8⟩
+8
+
+# Dyadic application
+⟨1, 2⟩ +´∘∾ ⟨3, 4⟩
+10
+#+END_SRC
+
+Note we have to parenthesise =⌊´= since =´= is left associative and binds looser than 2-Modifiers like =∘=. So the expression =-∘⌊´= would parse as =(-∘⌊)´=, which isn't what we want.
+
+3-trains, also known as forks, are the second tacit primitive. In its monadic form it abstracts over the pattern of applying two monadic functions to an argument and then passing the results of those function applications to a dyadic function.
+
+
+#+BEGIN_SRC bqn
+# Predicate function checking list length greater than 3
+P ← {3 < ≠ 𝕩}
+
+# List of all prefixes of the list 1..5
+prefixes ← ↑ 1 + ↕5
+⟨ ⟨⟩ ⟨ 1 ⟩ ⟨ 1 2 ⟩ ⟨ 1 2 3 ⟩ ⟨ 1 2 3 4 ⟩ ⟨ 1 2 3 4 5 ⟩ ⟩
+
+# Filter out elements of 𝕩 based on predicate
+{(P¨ 𝕩) / 𝕩} prefixes
+⟨ ⟨ 1 2 3 4 ⟩ ⟨ 1 2 3 4 5 ⟩ ⟩
+
+# Tacit form
+(P¨ / ⊢) prefixes
+⟨ ⟨ 1 2 3 4 ⟩ ⟨ 1 2 3 4 5 ⟩ ⟩
+#+END_SRC
+
+Here we define a function for filtering out elements of a list using the predicate =P= and the replicate =/= function. The left argument to replicate is the function =P= applied to each =¨= element of the list, and the right argument is the list itself. This can be written tacitly as the 3-train =P¨/⊢= where =⊢= in its monadic form is the identity function.[fn:2]
+
+The dyadic form of the 3-train simply extends the same pattern to dyadic functions, hence the functions on either side of the middle function =G= below are applied dyadically.
+
+#+BEGIN_SRC bqn
+# Monadic form
+{ (F 𝕩) G H 𝕩 } right
+# is equivalent to
+(F G H) right
+
+# Dyadic form
+left { (𝕨 F 𝕩) G 𝕨 H 𝕩 } right
+# is equivalent to
+left (F G H) right
+#+END_SRC
+
+Furthermore BQN defines several modifiers for composing together functions in different ways like =˜=, =˙=, =⊸=, =⟜= and =○=. You can read more them in the BQN [[https://mlochbaum.github.io/BQN/doc/primitive.html#modifiers][documentation]].
+
+*** Aside: Comparison to Haskell
+
+If you know Haskell some of these combinators might seem familiar to you. Both languages share some common operators from combinatoric logic. BQN's =∘= is equivalent to Haskell's compose =.= in it's monadic form and blackbird =.:= in it's dyadic form. Moreover 3-trains in their monadic form are equivalent to Haskell's =liftA2= when specialised to the function applicative. There are several other such equivalences, a more complete overview can be found [[https://combinatorylogic.com/table.html][here]].
+
+** Refactoring the "Maximum Difference" solution
+
+Coming back to the solution for our leetcode problem we can now refactor it using the powers of tacit programming.
+
+#+BEGIN_SRC bqn
+F ← {¯1⌈´ {(0≠𝕩) / 𝕩} 𝕩 - ⌊`𝕩}
+#+END_SRC
+
+The first part of the solution =𝕩 - ⌊`𝕩= can be written as a 3-train =⊢-⌊`=. The function ={(0≠𝕩) / 𝕩}= can be written as another 3-train =0⊸≠/⊢=. Here =⊸= is being used to partially apply =0= to the dyadic form of =≠=. We do the same for =¯1⌈´=, rewriting it as =¯1⊸(⌈´)= and then use BQN's nothing =·= operator to avoid parenthesis when combining the three functions.
+
+#+BEGIN_SRC bqn
+G ← ¯1⊸(⌈´)·(0⊸≠/⊢)⊢-⌊`
+#+END_SRC
+
+Since the pattern of writing a 3-train with an identity on either side is quite common BQN provides two modifiers /before/ =⊸= and /after/ =⟜= to write this more succinctly. Therefore we can make our solution a bit more terse by rewriting the second function in our solution using /before/ =⊸= to avoid the grouping parenthesis.
+
+#+BEGIN_SRC bqn
+G ← ¯1⊸(⌈´)·0⊸≠⊸/⊢-⌊`
+
+# Test that F and G returns the same results for each input
+testcases ← ⟨7, 1, 5, 4⟩‿⟨9, 4, 3, 2⟩‿⟨1, 5, 2, 10⟩
+
+(F=G)¨ testcases
+⟨ 1 1 1 ⟩
+#+END_SRC
+
+As we've seen tacit programming can reduce the size of a program by removing unnecessary noise that isn't directly addressing the problem you're solving. Allthough it can be difficult to read to begin with it gets easier over time once you get used to the different combinators, trains and syntactic roles in BQN.
+
+* Implementing Game of Life
+
+To show off the power of array programming in BQN we can take a look at implementing an all time classic ; [[https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life][Conways Game of Life]]. For the uninitiated Game of Life is a "zero player game" where you start with an initial matrix of cells either dead or alive and apply some rules to get the next iteration of cells. It just so happens that you can produce some beautiful patterns using these very simple rules. [fn:3] Lets take a look at what a BQN implementation looks like.
+
+We start by implementing an initial matrix of cells where =0= represents a dead cell and =1= represents an alive cell. Here we reshape =⥊= the numbers =0..8= into a 3x3 matrix and return a boolean mask for all the numbers that are in the list =1‿2‿3‿4‿7= so that we have some initial cell pattern.
+#+BEGIN_SRC bqn
+# Starting pattern
+m ← (3‿3 ⥊ ↕9) ∊ 1‿2‿3‿4‿7
+┌─
+╵ 0 1 1
+  1 1 0
+  0 1 0
+        ┘
+# Padded matrix
+5‿7 ↑ m
+┌─
+╵ 0 1 1 0 0 0 0
+  1 1 0 0 0 0 0
+  0 1 0 0 0 0 0
+  0 0 0 0 0 0 0
+  0 0 0 0 0 0 0
+                ┘
+#+END_SRC
+
+Then we can pad our matrix with some more empty (dead) cells using take =↑= which pads using the default value elements for the type you're working, in this case for numbers the default is =0=. Here we call take =↑= with the argument =5‿7= to pad the matrix in both its rows and columns. However we want to centre our cell pattern in this larger matrix so we use rotate =⌽= to rotate the rows and columns of the matrix.
+
+#+BEGIN_SRC bqn
+# Rotate rows to the right by 2
+¯2 ⌽˘ 5‿7 ↑ m
+┌─
+╵ 0 0 0 1 1 0 0
+  0 0 1 1 0 0 0
+  0 0 0 1 0 0 0
+  0 0 0 0 0 0 0
+  0 0 0 0 0 0 0
+                ┘
+
+# Then rotate columns down by 1
+¯1 ⌽ ¯2 ⌽˘ 5‿7 ↑ m
+┌─
+╵ 0 0 0 0 0 0 0
+  0 0 0 1 1 0 0
+  0 0 1 1 0 0 0
+  0 0 0 1 0 0 0
+  0 0 0 0 0 0 0
+                ┘
+# Initial matrix
+init ← ¯1 ⌽ ¯2 ⌽˘ 5‿7 ↑ (3‿3 ⥊ ↕9) ∊ 1‿2‿3‿4‿7
+#+END_SRC
+
+Now that we have our initial matrix we want to calculate how many neighbours each cell has so that we can start applying the rules. To do this we can generate all possible 1-rotations of the cells in the matrix in every direction and then sum the results.
+
+#+BEGIN_SRC bqn
+# Rotate every row in each possible direction (right, none, left)
+1‿0‿¯1 ⌽˘¨ <init
+┌─
+· ┌─                ┌─                ┌─
+  ╵ 0 0 0 0 0 0 0   ╵ 0 0 0 0 0 0 0   ╵ 0 0 0 0 0 0 0
+    0 0 1 1 0 0 0     0 0 0 1 1 0 0     0 0 0 0 1 1 0
+    0 1 1 0 0 0 0     0 0 1 1 0 0 0     0 0 0 1 1 0 0
+    0 0 1 0 0 0 0     0 0 0 1 0 0 0     0 0 0 0 1 0 0
+    0 0 0 0 0 0 0     0 0 0 0 0 0 0     0 0 0 0 0 0 0
+                  ┘                 ┘                 ┘
+                                                        ┘
+# Combine the row rotations using table with each
+# column rotation in every direction (down, none, up)
+1‿0‿¯1 ⌽⌜ 1‿0‿¯1 ⌽˘¨ <init
+┌─
+╵ ┌─                ┌─                ┌─
+  ╵ 0 0 1 1 0 0 0   ╵ 0 0 0 1 1 0 0   ╵ 0 0 0 0 1 1 0
+    0 1 1 0 0 0 0     0 0 1 1 0 0 0     0 0 0 1 1 0 0
+    0 0 1 0 0 0 0     0 0 0 1 0 0 0     0 0 0 0 1 0 0
+    0 0 0 0 0 0 0     0 0 0 0 0 0 0     0 0 0 0 0 0 0
+    0 0 0 0 0 0 0     0 0 0 0 0 0 0     0 0 0 0 0 0 0
+                  ┘                 ┘                 ┘
+  ┌─                ┌─                ┌─
+  ╵ 0 0 0 0 0 0 0   ╵ 0 0 0 0 0 0 0   ╵ 0 0 0 0 0 0 0
+    0 0 1 1 0 0 0     0 0 0 1 1 0 0     0 0 0 0 1 1 0
+    0 1 1 0 0 0 0     0 0 1 1 0 0 0     0 0 0 1 1 0 0
+    0 0 1 0 0 0 0     0 0 0 1 0 0 0     0 0 0 0 1 0 0
+    0 0 0 0 0 0 0     0 0 0 0 0 0 0     0 0 0 0 0 0 0
+                  ┘                 ┘                 ┘
+  ┌─                ┌─                ┌─
+  ╵ 0 0 0 0 0 0 0   ╵ 0 0 0 0 0 0 0   ╵ 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0     0 0 0 0 0 0 0     0 0 0 0 0 0 0
+    0 0 1 1 0 0 0     0 0 0 1 1 0 0     0 0 0 0 1 1 0
+    0 1 1 0 0 0 0     0 0 1 1 0 0 0     0 0 0 1 1 0 0
+    0 0 1 0 0 0 0     0 0 0 1 0 0 0     0 0 0 0 1 0 0
+                  ┘                 ┘                 ┘
+                                                        ┘
+#+END_SRC
+
+With the matrix above enumerating all possible 1-rotations in every direction we can sum the result column-wise and then row wise to get a matrix of neighbour counts for the initial matrix.
+
+#+BEGIN_SRC bqn
+# Neighbour count matrix
++˘˝ +˝ 1‿0‿¯1 ⌽⌜ 1‿0‿¯1 ⌽˘¨ <init
+┌·
+· ┌─
+  ╵ 0 0 1 2 2 1 0
+    0 1 3 4 3 1 0
+    0 1 4 5 4 1 0
+    0 1 3 3 2 0 0
+    0 0 1 1 1 0 0
+                  ┘
+                    ┘
+#+END_SRC
+
+We can now calculate the next iteration of cells by applying the rules. The rules state that a cell lives on if the neighbour count including itself is equal to 3 or if the neighbour count including itself is equal to 4 and the original cell was alive.
+
+#+BEGIN_SRC bqn
+3‿4 = +˘˝ +˝ 1‿0‿¯1 ⌽⌜ 1‿0‿¯1 ⌽˘¨ <init
+┌─
+· ┌─                ┌─
+  ╵ 0 0 0 0 0 0 0   ╵ 0 0 0 0 0 0 0
+    0 0 1 0 1 0 0     0 0 0 1 0 0 0
+    0 0 0 0 0 0 0     0 0 1 0 1 0 0
+    0 0 1 1 0 0 0     0 0 0 0 0 0 0
+    0 0 0 0 0 0 0     0 0 0 0 0 0 0
+                  ┘                 ┘
+                                      ┘
+#+END_SRC
+
+We start by checking which elements in the neighbour count matrix has 3 and 4 neighbours. Since we want to keep every cell with 3 neighbouring cells, but only keep every 4 neighbouring cell if they're occupied in the original matrix we can call logical and =∧= with the argument =1‿init= so that the 3-neighbour matrix is left untouched while the 4-neighbour matrix we logically and =∧= with the original matrix =init=. Then we simply or =∨= the resulting matrices to combine them together to get the next iteration of cells.
+
+#+BEGIN_SRC bqn
+# Apply rules for 3-neighbour and 4-neighbour matrices
+1‿init ∧ 3‿4 = +˘˝ +˝ 1‿0‿¯1 ⌽⌜ 1‿0‿¯1 ⌽˘¨ <init
+┌─
+· ┌─                ┌─
+  ╵ 0 0 0 0 0 0 0   ╵ 0 0 0 0 0 0 0
+    0 0 1 0 1 0 0     0 0 0 1 0 0 0
+    0 0 0 0 0 0 0     0 0 1 0 0 0 0
+    0 0 1 1 0 0 0     0 0 0 0 0 0 0
+    0 0 0 0 0 0 0     0 0 0 0 0 0 0
+                  ┘                 ┘
+                                      ┘
+
+# Combine matrices into final result
+∨´ 1‿init ∧ 3‿4 = +˘˝ +˝ 1‿0‿¯1 ⌽⌜ 1‿0‿¯1 ⌽˘¨ <init
+┌─
+╵ 0 0 0 0 0 0 0
+  0 0 1 1 1 0 0
+  0 0 1 0 0 0 0
+  0 0 1 1 0 0 0
+  0 0 0 0 0 0 0
+                ┘
+#+END_SRC
+
+Finally we can abstract this into a function for iterating the game one step.
+
+#+BEGIN_SRC bqn
+# Iteration function
+F ← {∨´ 1‿𝕩 ∧ 3‿4 = +˘˝ +˝ 1‿0‿¯1 ⌽⌜ 1‿0‿¯1 ⌽˘¨ <𝕩}
+
+# Tacit form
+T ← 1⊸⋈ ∨´∘∧ 3‿4 =·+˘˝·+˝1‿0‿¯1 ⌽⌜ 1‿0‿¯1 ⌽˘¨ <
+
+# Initial matrix
+init ← ¯1 ⌽ ¯2 ⌽˘ 5‿7 ↑ (3‿3 ⥊ ↕9) ∊ 1‿2‿3‿4‿7
+
+# Apply F to get different iterations in the Game of Life
+F init
+F F init
+F F F init
+#+END_SRC
+
+The entire Game of Life solution fits on one line. However if we want some pretty printed representation of the cells and some animation of the iterations I've written some code for that below.
+
+#+BEGIN_SRC bqn
+# Larger initial matrix
+r ← 15‿35 ↑ ¯10‿¯20 ↑ (3‿3 ⥊ ↕9) ∊ 1‿2‿3‿4‿7
+
+# Iteration function
+Life ← {∨´ 1‿𝕩 ∧ 3‿4 = +˘˝ +˝ 1‿0‿¯1 ⌽⌜ 1‿0‿¯1 ⌽˘¨ <𝕩}
+
+# 'animate' 100 iterations
+{ i ← Life 𝕩 ⋄ •Delay 1 ⋄ •Show i ⊏ "·⍝" ⋄ i}⍟100 r
+#+END_SRC
+
+#+BEGIN_EXPORT html
+<video width="800" height="400" controls loop muted>
+  <source src="/img/gameoflife.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+#+END_EXPORT
+
+As we've seen BQN's core functional array primitives of functions and modifiers allow us to express complex ideas using multi-dimension arrays and we haven't even touched on all the primitives! Furthermore the first class support for tacit programming lets use write terse code which follows the DRY principle. Hopefully this has been an enlightening introduction to elegance of array programming with BQN.
+
+* Resources
+
+[[https://mlochbaum.github.io/BQN/][Documentation]]
+
+Interpreters
+- [[https://github.com/dzaima/cbqn][CBQN]]
+- [[https://github.com/dzaima/bqn][dzaima's Java BQN]]
+- [[https://github.com/mlochbaum/BQN][Node.js reference implementation]]
+
+Miscellaneous
+- [[https://mlochbaum.github.io/bqncrate][bqncrate]] for finding code snippets
+- [[https://saltysylvi.github.io/bqn-tacit-helper/][tacit helper]] for expanding tacit code
+- [[https://www.youtube.com/@code_report/videos][code_report]] youtube videos about problem solving with array languages
+
+[fn:1] His [[https://dl.acm.org/doi/pdf/10.1145/358896.358899][turing award lecture]] was an interesting dive into the background for APL and the idea of Notation as a Tool of Thought.
+
+[fn:2] Since this pattern of writing a 3-train with an identity function on either side is very common BQN provides two modifiers before =⊸= and after =⟜= for this exact purpose. Therefore we could instead write =P¨⊸/ prefixes=
+
+[fn:3] In fact it turns out that Game of Life is [[https://youtu.be/xP5-iIeKXE8][turing complete]].
