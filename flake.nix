@@ -16,6 +16,7 @@
         name = "blog";
 
         packages = with pkgs; [
+          nodejs
           nixd
           hugo
         ];
