@@ -2,7 +2,7 @@ baseURL = "https://vallipuram.dev"
 title = "λ Lambda jam blog"
 
 ## Change this two to switch between different language
-languageCode = "en-gb"  # For RSS, view https://www.rssboard.org/rss-language-codes
+locale = "en-gb"  # For RSS, view https://www.rssboard.org/rss-language-codes
 defaultContentLanguage = "en"  # For HTML page, now support: en, zh-hans, zh-hant, ja, nl
 
 [params]
