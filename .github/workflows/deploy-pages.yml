@@ -33,7 +33,10 @@ jobs:
         run: nix develop --command bash -lc 'npm ci && npm run build'
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        # Vendored from actions/upload-pages-artifact@v3.0.1 because the upstream
+        # composite action references actions/upload-artifact@v4 internally, which
+        # violates this repository's full-length SHA pinning policy.
+        uses: ./.github/actions/upload-pages-artifact
         with:
           path: public
 
