@@ -1,5 +1,5 @@
 {
-  description = "A flake for the website dev environment";
+  description = "Developmnent environment for my personal blog";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
