@@ -1,7 +1,7 @@
 #+TITLE: Vallipuram blog
 #+DESCRIPTION: My personal developer blog where I write about things that interest me. Usually related to functional programming.
 
-Hi, I am Nicholas. I studied computer science at [[https://ntnu.edu][NTNU]] and I am currently working as a software engineer in the electronic signature and identification space.
+Hi, I am Nicholas. I studied computer science at [[https://ntnu.edu][NTNU]] and I am currently working as a data platform engineer with previous experience in the electronic signature and identification space.
 
 This is my personal website where I write blog posts sometimes and keep a tab of all the interesting projects I've worked on.
 
