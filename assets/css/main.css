@@ -102,6 +102,7 @@ body {
 .content table,
 th,
 td {
+  @apply p-2;
   @apply border-2;
   @apply border-collapse;
   @apply border-gray;
