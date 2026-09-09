@@ -2,6 +2,7 @@
 #+DATE: 2026-09-09T01:00:00+02:00
 #+DRAFT: false
 #+TAGS[]: database facts RDF datalog fact-oriented
+#+DESCRIPTION: An introduction to fact-oriented databases, Datalog queries, relationships and aggregation.
 
 Databases have a long history in computer science, from the early days of relational algebra and SQL to more recent
 "NoSQL" incarnations such as document stores and graph databases. One family often left out of this story includes RDF

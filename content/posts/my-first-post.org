@@ -2,6 +2,7 @@
 #+DATE: 2020-06-17T21:54:28+02:00
 #+DRAFT: true
 #+TAGS[]: first org-mode code
+#+DESCRIPTION: A test post exploring Org mode rendering, code blocks, tables and images in Hugo.
 
 * Testing org-mode rendering
 This is supposed to be the summary of the blog post. Here we give a short tl;dr of what the post is about.

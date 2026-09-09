@@ -2,6 +2,7 @@
 #+DATE: 2020-07-21T04:00:00+02:00
 #+DRAFT: false
 #+TAGS[]: dependent-types Idris
+#+DESCRIPTION: An introduction to dependent types and how Idris uses them to express safer programs.
 
 Static type systems are ubiquitous in programming languages. Many of the most popular languages like C and
 Java have static type systems. Static types give the programmer some level of guarantee that their
