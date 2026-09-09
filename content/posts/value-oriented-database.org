@@ -1,0 +1,223 @@
+#+title: Fact-oriented databases
+#+DATE: 2026-09-09T01:00:00+02:00
+#+DRAFT: false
+#+TAGS[]: database facts RDF datalog fact-oriented
+
+Databases have a long history in computer science, from the early days of relational algebra and SQL to more recent
+"NoSQL" incarnations such as document stores and graph databases. One family often left out of this story includes RDF
+databases and their more academic cousin, Datalog. The idea behind Datalog is simple yet allows for great flexibility
+when modeling data, especially compared to relational databases.
+
+
+* Storing facts
+:PROPERTIES:
+:ID:       5d0c2cbe-9d5d-400e-b04e-5e9568d5d937
+:END:
+
+The idea behind Datalog is simple: we store facts about the world. A fact consists of an entity, an attribute and a value. This closely
+corresponds to the subject-predicate-object triples of the Resource Description Framework (RDF), which explains why these systems are
+often called triplestores. For example, if we want to model repositories in a Git forge like GitHub, we might store facts like this:
+
+| entity | attribute  | value                 |
+|--------+------------+-----------------------|
+|      1 | user/name  | richhickey            |
+|      2 | user/name  | tonsky                |
+|      8 | user/name  | carols10cents         |
+|      9 | user/name  | Gabriella439          |
+|      3 | org/name   | clojure               |
+|      4 | repo/slug  | clojure/clojure       |
+|      5 | repo/slug  | clojure/core.async    |
+|      6 | repo/slug  | tonsky/fast-edn       |
+|      7 | repo/slug  | richhickey/harmonikit |
+|      4 | repo/owner | 3                     |
+|      5 | repo/owner | 3                     |
+|      6 | repo/owner | 2                     |
+|      7 | repo/owner | 1                     |
+
+Every entity has a unique ID. In this example we use integer IDs to keep things simple. Any entity can have an attribute with a value, but things become
+more interesting when we draw relationships between entities. We represent repository ownership with a =repo/owner= attribute whose value refers to another entity.
+The fact =4 repo/owner 3= means that the owner of the =clojure/clojure= repository is the GitHub organization named =clojure=. Both users and organizations can own a
+repository. A relational model can represent this too, but typically needs an additional owner table or constraint to preserve that relationship.
+
+* Querying facts
+
+This is all fine and dandy, but how do we query this information? This is where the power of Datalog really shines. Datalog is a declarative logic-programming
+language closely related to Prolog. We will use Prolog-style Datalog syntax throughout the examples. We can translate the facts above directly into Datalog:
+
+#+BEGIN_SRC prolog
+% Facts are defined as `attribute(entity, value).`
+user/name(1, "richhickey").
+user/name(2, "tonsky").
+user/name(8, "carols10cents").
+user/name(9, "Gabriella439").
+org/name(3, "clojure").
+
+repo/slug(4, "clojure/clojure").
+repo/slug(5, "clojure/core.async").
+repo/slug(6, "tonsky/fast-edn").
+repo/slug(7, "richhickey/harmonikit").
+
+repo/owner(4, 3).
+repo/owner(5, 3).
+repo/owner(6, 2).
+repo/owner(7, 1).
+#+END_SRC
+
+Let's start by asking for every repository slug in our data. We use the capitalized symbols =Repo= and =Slug= as variables, so Datalog finds every =repo/slug=
+fact and returns the values that satisfy the query:
+
+#+BEGIN_SRC prolog
+?- repo/slug(Repo, Slug).
+Repo = 4, Slug = "clojure/clojure" ;
+Repo = 5, Slug = "clojure/core.async" ;
+Repo = 6, Slug = "tonsky/fast-edn" ;
+Repo = 7, Slug = "richhickey/harmonikit" .
+#+END_SRC
+
+Each result binds =Repo= to an entity ID and =Slug= to that entity's slug. Now we can combine multiple kinds of facts by writing a rule that fetches all
+repositories belonging to a user or organization:
+
+#+BEGIN_SRC prolog
+owner/repo(Owner, RepoSlug) :-
+    (user/name(O, Owner) ; org/name(O, Owner)),
+    repo/slug(R, RepoSlug),
+    repo/owner(R, O).
+#+END_SRC
+
+=owner/repo= is a Datalog rule which defines a relationship between an owner and a repository slug. Every symbol starting with a capital letter
+is a variable, =;= is logical =or= and =,= is logical =and=. So what we're expressing is that an =Owner= is an entity that has a =user/name= *or* =org/name= attribute and is the =repo/owner= of
+an entity =R= which has the =repo/slug= attribute of value =RepoSlug=. We can then proceed to query information like finding every repository slug owned by the organization =clojure=:
+
+#+BEGIN_SRC prolog
+?- owner/repo("clojure", RepoSlug).
+RepoSlug = "clojure/clojure" ;
+RepoSlug = "clojure/core.async" .
+#+END_SRC
+
+Because the rule describes a relationship rather than a one-way procedure, we can also query it in reverse to find the owner of a given repository:
+
+#+BEGIN_SRC prolog
+% Who is the owner of the repository richhickey/harmonikit?
+?- owner/repo(Owner, "richhickey/harmonikit").
+Owner = "richhickey" .
+#+END_SRC
+
+We can also use this to check whether a relationship holds:
+
+#+BEGIN_SRC prolog
+% Is richhickey the owner of the repository tonsky/fast-edn?
+?- owner/repo("richhickey", "tonsky/fast-edn").
+false.
+
+% Is tonsky the owner of the repository tonsky/fast-edn?
+?- owner/repo("tonsky", "tonsky/fast-edn").
+true.
+#+END_SRC
+
+* Querying for absence
+
+A fact-oriented database stores positive assertions about entities and their attributes. It does not need placeholder facts for values that are absent. For
+optional scalar attributes in a fixed relational table, a missing value may be represented explicitly with =NULL=. Here, if an entity has no value for an
+attribute, there is simply no fact containing that entity and attribute.
+
+Absence can instead be expressed when we query the data. For example, we can find every user or organization for which no repository ownership can be derived:
+
+#+BEGIN_SRC prolog
+owner/no-repos(Owner) :-
+    (user/name(_, Owner) ; org/name(_, Owner)),
+    \+ owner/repo(Owner, _).
+#+END_SRC
+
+The first part identifies all possible owners, while the second requires that no matching =owner/repo= relationship can be found, here using SWI-Prolog's negation
+operator =\+= and =_= for variables we don't care about. Querying it returns the users for whom we have no repository ownership facts:
+
+#+BEGIN_SRC prolog
+?- owner/no-repos(Owner).
+Owner = "carols10cents" ;
+Owner = "Gabriella439" .
+#+END_SRC
+
+This demonstrates an important distinction: absence is a property of a query over the facts we know, not another value that must be stored alongside them. This
+query uses closed-world semantics, treating a relationship that cannot be derived from the local facts as absent.
+
+* Aggregating facts
+
+Queries can also summarize facts rather than return every match. Suppose our users star some repositories. Our complete dataset now looks like this:
+
+| entity | attribute    |                 value |
+|--------+--------------+-----------------------|
+|      1 | user/name    |            richhickey |
+|      2 | user/name    |                tonsky |
+|      8 | user/name    |         carols10cents |
+|      9 | user/name    |          Gabriella439 |
+|      3 | org/name     |               clojure |
+|      4 | repo/slug    |       clojure/clojure |
+|      5 | repo/slug    |    clojure/core.async |
+|      6 | repo/slug    |       tonsky/fast-edn |
+|      7 | repo/slug    | richhickey/harmonikit |
+|      4 | repo/owner   |                     3 |
+|      5 | repo/owner   |                     3 |
+|      6 | repo/owner   |                     2 |
+|      7 | repo/owner   |                     1 |
+|      1 | user/starred |                     4 |
+|      1 | user/starred |                     6 |
+|      2 | user/starred |                     4 |
+|      2 | user/starred |                     5 |
+
+The =user/starred= attribute relates a user to a repository they have starred. We can define a new =repo/stars= relationship that counts these facts for each
+repository:
+
+#+BEGIN_SRC prolog
+repo/stars(RepoSlug, StarCount) :-
+    repo/slug(Repo, RepoSlug),
+    aggregate_all(count, user/starred(_, Repo), StarCount).
+#+END_SRC
+
+Querying the rule gives us the star count for every repository:
+
+#+BEGIN_SRC prolog
+?- repo/stars(RepoSlug, StarCount).
+RepoSlug = "clojure/clojure", StarCount = 2 ;
+RepoSlug = "clojure/core.async", StarCount = 1 ;
+RepoSlug = "tonsky/fast-edn", StarCount = 1 ;
+RepoSlug = "richhickey/harmonikit", StarCount = 0 .
+#+END_SRC
+
+Rules are also easy to compose. We already have one rule relating owners to repositories and another relating repositories to their star counts. A third rule can
+combine them to count all the stars across an owner's repositories:
+
+#+BEGIN_SRC prolog
+owner/stars(Owner, StarCount) :-
+    aggregate(sum(RepoStars), RepoSlug^
+        (owner/repo(Owner, RepoSlug), repo/stars(RepoSlug, RepoStars)),
+        StarCount).
+#+END_SRC
+
+The shared =RepoSlug= variable connects each repository found by =owner/repo= to its count from =repo/stars=. Grouping by =Owner= and summing those counts gives us
+one =StarCount= for each owner, so the rule works whether we ask about one owner or all of them. We can now ask how many stars the =clojure= organization has across
+all its repositories:
+
+#+BEGIN_SRC prolog
+?- owner/stars("clojure", StarCount).
+StarCount = 3 .
+#+END_SRC
+
+Each rule describes a relationship and can be used anywhere another rule can use a fact. Composition therefore looks the same whether the data comes directly
+from stored facts or is derived through several other rules. SQL also supports composition through subqueries, common table expressions and views, but Datalog
+gives stored and derived relations the same rule syntax. Building a more involved query is often just a matter of placing existing rules next to each other and
+connecting them with shared variables.
+
+* It's all facts and rules
+
+I hope this was an illuminating introduction to Datalog and the ideas of RDF. Fact-oriented databases reduce data to a small, uniform set of facts while leaving
+their relationships open to interpretation through queries. The same facts can describe different kinds of entities, connect those entities and support new
+derived relationships without changing a rigid table structure.
+
+Datalog builds on that foundation with rules that read like facts and compose in the same way. Simple queries can grow into aggregations and richer relationships
+without hiding the underlying data model.
+
+These ideas are used in systems operating at very different scales. [[https://www.wikidata.org/][Wikidata]] represents knowledge as a graph and makes it available through the
+[[https://query.wikidata.org/][Wikidata Query Service]] using [[https://www.w3.org/TR/sparql11-query/][SPARQL]], the standard query language for RDF. [[https://www.dbpedia.org/][DBpedia]] takes structured information extracted from Wikipedia and publishes it as RDF,
+allowing facts from articles to be linked and queried as one graph. On the Datalog side, databases such as [[https://www.datomic.com/][Datomic]] and [[https://xtdb.com/][XTDB]] use facts and declarative queries to
+model application data, while tools such as [[https://souffle-lang.github.io/][Soufflé]] use Datalog to express program analyses. RDF and Datalog may be less known than SQL, but they already power public knowledge
+graphs, production databases and developer tooling.
