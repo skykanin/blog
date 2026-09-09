@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "postcss assets/css/main.css --output static/css/main.css && hugo",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "postcss assets/css/main.css --output static/css/main.css && hugo serve -D"
   },
   "repository": {
     "type": "git",

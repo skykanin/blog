@@ -144,6 +144,10 @@ query uses closed-world semantics, treating a relationship that cannot be derive
 
 Queries can also summarize facts rather than return every match. Suppose our users star some repositories. Our complete dataset now looks like this:
 
+#+BEGIN_EXPORT html
+<div class="fact-tables">
+#+END_EXPORT
+
 | entity | attribute    |                 value |
 |--------+--------------+-----------------------|
 |      1 | user/name    |            richhickey |
@@ -155,6 +159,9 @@ Queries can also summarize facts rather than return every match. Suppose our use
 |      5 | repo/slug    |    clojure/core.async |
 |      6 | repo/slug    |       tonsky/fast-edn |
 |      7 | repo/slug    | richhickey/harmonikit |
+
+| entity | attribute    | value |
+|--------+--------------+-------|
 |      4 | repo/owner   |                     3 |
 |      5 | repo/owner   |                     3 |
 |      6 | repo/owner   |                     2 |
@@ -163,6 +170,10 @@ Queries can also summarize facts rather than return every match. Suppose our use
 |      1 | user/starred |                     6 |
 |      2 | user/starred |                     4 |
 |      2 | user/starred |                     5 |
+
+#+BEGIN_EXPORT html
+</div>
+#+END_EXPORT
 
 The =user/starred= attribute relates a user to a repository they have starred. We can define a new =repo/stars= relationship that counts these facts for each
 repository:
