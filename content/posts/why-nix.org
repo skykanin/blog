@@ -2,6 +2,7 @@
 #+DATE: 2020-07-07T01:00:00+02:00
 #+DRAFT: false
 #+TAGS[]: nix declarative package-managment functional
+#+DESCRIPTION: Why Nix makes package management and development environments reproducible, declarative and reliable.
 
 I'm often asked questions such as "What's the point of Nix?", "Why would I ever use this?"
 and "Isn't it just yet another package manager?". So in this post I'll try to answer these questions

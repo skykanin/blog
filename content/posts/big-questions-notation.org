@@ -1,6 +1,7 @@
 #+title: Big Questions Notation
 #+date: 2023-04-02T15:30:00+02:00
 #+tags[]: array BQN functional iversonian
+#+DESCRIPTION: An introduction to BQN, a modern functional array programming language in the APL tradition.
 
 Last year while doing [[https://adventofcode.com/][advent of code]] I came across the [[https://en.wikipedia.org/wiki/APL_(programming_language)][APL]] programming language. I had always been interested in exploring array programming, but the highly imperative nature of tools like [[https://numpy.org/][NumPy]], [[https://www.r-project.org/][R]], [[https://julialang.org/][Julia]] and [[https://www.mathworks.com/products/matlab.html][Matlab]] turned me off. Luckily APL has the best of both worlds as a functional array programming language with first class support both for functions /and/ multi-dimensional arrays. More recently I've been playing around with [[https://mlochbaum.github.io/BQN/][BQN]], a modern variant of APL, which is what I'll be exploring today.
 
