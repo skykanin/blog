@@ -108,12 +108,30 @@ td {
   @apply border-gray;
 }
 
+.content th,
+.content td {
+  @apply text-center;
+}
+
 /* When inside table use different style for verbatim code */
 .content table code.verbatim {
   @apply bg-gray;
   @apply text-blue;
   @apply rounded-sm;
   @apply p-0.5;
+}
+
+.content .fact-tables {
+  @apply grid;
+  @apply gap-4;
+  @apply justify-center;
+  @apply my-10;
+  @apply overflow-x-auto;
+  grid-template-columns: repeat(2, max-content);
+}
+
+.content .fact-tables table {
+  @apply m-0;
 }
 
 .content .footnotes-separatator {
