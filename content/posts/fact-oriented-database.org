@@ -81,8 +81,8 @@ repositories belonging to a user or organization:
 #+BEGIN_SRC prolog
 owner/repo(Owner, RepoSlug) :-
     (user/name(O, Owner) ; org/name(O, Owner)),
-    repo/slug(R, RepoSlug),
-    repo/owner(R, O).
+    repo/owner(R, O),
+    repo/slug(R, RepoSlug).
 #+END_SRC
 
 =owner/repo= is a Datalog rule which defines a relationship between an owner and a repository slug. Every symbol starting with a capital letter
